@@ -72,7 +72,7 @@ function saveFallbackDB() {
 
 async function startServer() {
   const app = express();
-  const PORT = 3000;
+  const PORT = process.env.PORT || 3000;
 
   const server = http.createServer(app);
   const io = new Server(server, { cors: { origin: "*" } });
