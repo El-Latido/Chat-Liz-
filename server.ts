@@ -6,6 +6,7 @@ import { createServer as createViteServer } from "vite";
 import fs from "fs";
 import { GoogleGenAI } from "@google/genai";
 import dotenv from "dotenv";
+import mongoose from "mongoose";
 
 dotenv.config();
 
@@ -18,30 +19,55 @@ const ai = new GoogleGenAI({
   },
 });
 
-const DB_FILE = path.join(process.cwd(), "db.json");
+// MongoDB Setup
+const mongoURI = process.env.MONGODB_URI;
 
+const userSchema = new mongoose.Schema({
+  username: { type: String, required: true, unique: true },
+  password: { type: String, required: true }
+});
+const User = mongoose.model("User", userSchema);
+
+const messageSchema = new mongoose.Schema({
+  id: String,
+  sender: String,
+  text: String,
+  image: String,
+  audio: String,
+  createdAt: { type: Date, default: Date.now }
+});
+const Message = mongoose.model("Message", messageSchema);
+
+if (mongoURI) {
+  mongoose.connect(mongoURI).then(() => {
+    console.log("Connected to MongoDB Atlas");
+  }).catch(err => {
+    console.error("MongoDB Connection Error:", err);
+  });
+}
+
+// Fallback JSON DB if no MongoDB configured
+const DB_FILE = path.join(process.cwd(), "db.json");
 interface DBState {
-  users: Record<string, string>; // username -> password
+  users: Record<string, string>;
   globalMessages: any[];
 }
-
-let state: DBState = {
-  users: {},
-  globalMessages: [],
-};
+let fallbackState: DBState = { users: {}, globalMessages: [] };
 
 try {
-  if (fs.existsSync(DB_FILE)) {
+  if (!mongoURI && fs.existsSync(DB_FILE)) {
     const data = JSON.parse(fs.readFileSync(DB_FILE, "utf8"));
-    state.users = data.users || {};
-    state.globalMessages = data.globalMessages || [];
+    fallbackState.users = data.users || {};
+    fallbackState.globalMessages = data.globalMessages || [];
   }
 } catch (e) {
-  console.error("Error loading DB", e);
+  console.error("Error loading fallback DB", e);
 }
 
-function saveDB() {
-  fs.writeFileSync(DB_FILE, JSON.stringify(state, null, 2));
+function saveFallbackDB() {
+  if (!mongoURI) {
+    fs.writeFileSync(DB_FILE, JSON.stringify(fallbackState, null, 2));
+  }
 }
 
 async function startServer() {
@@ -49,9 +75,7 @@ async function startServer() {
   const PORT = 3000;
 
   const server = http.createServer(app);
-  const io = new Server(server, {
-    cors: { origin: "*" },
-  });
+  const io = new Server(server, { cors: { origin: "*" } });
 
   app.use(express.json({ limit: "50mb" }));
 
@@ -60,27 +84,40 @@ async function startServer() {
   io.on("connection", (socket) => {
     let currentUsername = "";
 
-    socket.on("register_or_login", (data, callback) => {
+    socket.on("register_or_login", async (data, callback) => {
       const { username, password } = data;
       if (!username || !password) return callback({ success: false, error: "Missing fields" });
 
-      if (state.users[username]) {
-        // Login
-        if (state.users[username] !== password) {
-          return callback({ success: false, error: "Contraseña incorrecta" });
+      if (mongoURI) {
+        try {
+          const user = await User.findOne({ username });
+          if (user) {
+            if (user.password !== password) return callback({ success: false, error: "Contraseña incorrecta" });
+          } else {
+            await User.create({ username, password });
+            setTimeout(async () => {
+              const msg = { text: `¡Uy! ¿Alguien nuevo? ¡Bienvenido/a al chat, ${username}! Qué bueno verte por aquí. 😏`, sender: "Elizabeth", id: Date.now().toString() };
+              await Message.create(msg);
+              io.emit("receive_global", msg);
+            }, 1000);
+          }
+        } catch (err) {
+          console.error(err);
+          return callback({ success: false, error: "Database error" });
         }
       } else {
-        // Register
-        state.users[username] = password;
-        saveDB();
-        
-        // Let Elizabeth greet
-        setTimeout(async () => {
-          const msg = { text: `¡Uy! ¿Alguien nuevo? ¡Bienvenido/a al chat, ${username}! Qué bueno verte por aquí. 😏`, sender: "Elizabeth", id: Date.now().toString() };
-          state.globalMessages.push(msg);
-          saveDB();
-          io.emit("receive_global", msg);
-        }, 1000);
+        if (fallbackState.users[username]) {
+          if (fallbackState.users[username] !== password) return callback({ success: false, error: "Contraseña incorrecta" });
+        } else {
+          fallbackState.users[username] = password;
+          saveFallbackDB();
+          setTimeout(async () => {
+             const msg = { text: `¡Uy! ¿Alguien nuevo? ¡Bienvenido/a al chat, ${username}! Qué bueno verte por aquí. 😏`, sender: "Elizabeth", id: Date.now().toString() };
+             fallbackState.globalMessages.push(msg);
+             saveFallbackDB();
+             io.emit("receive_global", msg);
+          }, 1000);
+        }
       }
 
       currentUsername = username;
@@ -89,17 +126,27 @@ async function startServer() {
       callback({ success: true });
     });
 
-    socket.on("update_profile", (data, callback) => {
+    socket.on("update_profile", async (data, callback) => {
       const { oldUsername, newUsername, newPassword } = data;
       if (oldUsername !== currentUsername) return callback({ success: false, error: "Unauthorized" });
 
-      if (newUsername !== oldUsername && state.users[newUsername]) {
-        return callback({ success: false, error: "El usuario ya existe" });
+      if (mongoURI) {
+        try {
+          if (newUsername !== oldUsername) {
+            const exists = await User.findOne({ username: newUsername });
+            if (exists) return callback({ success: false, error: "El usuario ya existe" });
+          }
+          await User.findOneAndUpdate({ username: oldUsername }, { username: newUsername || oldUsername, password: newPassword });
+        } catch (err) {
+          console.error(err);
+          return callback({ success: false, error: "Database error" });
+        }
+      } else {
+         if (newUsername !== oldUsername && fallbackState.users[newUsername]) return callback({ success: false, error: "El usuario ya existe" });
+         delete fallbackState.users[oldUsername];
+         fallbackState.users[newUsername || oldUsername] = newPassword;
+         saveFallbackDB();
       }
-
-      delete state.users[oldUsername];
-      state.users[newUsername || oldUsername] = newPassword;
-      saveDB();
 
       delete activeUsers[oldUsername];
       currentUsername = newUsername || oldUsername;
@@ -109,25 +156,50 @@ async function startServer() {
       callback({ success: true, username: currentUsername });
     });
 
-    socket.on("get_global_history", (callback) => {
-      callback(state.globalMessages);
+    socket.on("get_global_history", async (callback) => {
+      if (mongoURI) {
+        try {
+          const msgs = await Message.find().sort({ createdAt: 1 }).limit(100);
+          callback(msgs);
+        } catch (err) {
+          callback([]);
+        }
+      } else {
+        callback(fallbackState.globalMessages);
+      }
     });
 
     socket.on("send_global", async (msg) => {
       if (!currentUsername) return;
       msg.sender = currentUsername;
       msg.id = Date.now().toString();
-      state.globalMessages.push(msg);
-      // Keep only last 100
-      if (state.globalMessages.length > 100) state.globalMessages.shift();
-      saveDB();
+
+      if (mongoURI) {
+        await Message.create(msg);
+        const count = await Message.countDocuments();
+        if (count > 100) {
+           const oldest = await Message.findOne().sort({ createdAt: 1 });
+           if (oldest) await Message.deleteOne({ _id: oldest._id });
+        }
+      } else {
+        fallbackState.globalMessages.push(msg);
+        if (fallbackState.globalMessages.length > 100) fallbackState.globalMessages.shift();
+        saveFallbackDB();
+      }
 
       io.emit("receive_global", msg);
 
-      // Check if Elizabeth is mentioned
       if (msg.text && (msg.text.toLowerCase().includes("elizabeth") || msg.text.toLowerCase().includes("liz"))) {
         try {
-          const context = state.globalMessages.slice(-10).map((m: any) => `${m.sender}: ${m.text}`).join("\n");
+          let contextMsgs = [];
+          if (mongoURI) {
+             contextMsgs = await Message.find().sort({ createdAt: -1 }).limit(10);
+             contextMsgs.reverse();
+          } else {
+             contextMsgs = fallbackState.globalMessages.slice(-10);
+          }
+          
+          const context = contextMsgs.map((m: any) => `${m.sender}: ${m.text}`).join("\n");
           const response = await ai.models.generateContent({
             model: "gemini-3.5-flash",
             contents: `Historial reciente:\n${context}`,
@@ -136,8 +208,13 @@ async function startServer() {
             }
           });
           const eliMsg = { text: response.text, sender: "Elizabeth", id: Date.now().toString() };
-          state.globalMessages.push(eliMsg);
-          saveDB();
+          
+          if (mongoURI) {
+            await Message.create(eliMsg);
+          } else {
+            fallbackState.globalMessages.push(eliMsg);
+            saveFallbackDB();
+          }
           io.emit("receive_global", eliMsg);
         } catch (e) {
           console.error("Gemini Error:", e);
@@ -166,19 +243,13 @@ async function startServer() {
     });
   });
 
-  // Vite middleware for development
   if (process.env.NODE_ENV !== "production") {
-    const vite = await createViteServer({
-      server: { middlewareMode: true },
-      appType: "spa",
-    });
+    const vite = await createViteServer({ server: { middlewareMode: true }, appType: "spa" });
     app.use(vite.middlewares);
   } else {
     const distPath = path.join(process.cwd(), "dist");
     app.use(express.static(distPath));
-    app.get("*", (req, res) => {
-      res.sendFile(path.join(distPath, "index.html"));
-    });
+    app.get("*", (req, res) => res.sendFile(path.join(distPath, "index.html")));
   }
 
   server.listen(PORT, "0.0.0.0", () => {
