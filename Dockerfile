@@ -13,6 +13,9 @@ COPY . .
 # Build the application
 RUN npm run build
 
+# Set environment to production
+ENV NODE_ENV=production
+
 # Expose the standard port (Render will override the PORT env var dynamically)
 EXPOSE 3000
 
