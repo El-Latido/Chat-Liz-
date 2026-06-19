@@ -206,7 +206,7 @@ export default function GlobalChat({ currentUser, onLogout }: { currentUser: str
 
       {/* Input Area */}
       <footer className="h-[90px] bg-[#0f0f12] border-t border-[#222] flex items-center px-[30px] gap-5">
-        <input type="file" accept="image/*" className="hidden" ref={fileInputRef} onChange={handleImageSelect} />
+        <input type="file" accept="image/*" style={{ display: 'none' }} ref={fileInputRef} onChange={handleImageSelect} />
         
         <div className="flex items-center gap-[15px] text-[#666]">
           <button onClick={() => fileInputRef.current?.click()} className="hover:text-white transition flex-shrink-0">
