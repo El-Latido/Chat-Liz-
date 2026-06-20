@@ -6,12 +6,15 @@ export default function Login({ onLogin }: { onLogin: (username: string) => void
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!username || !password) return;
+    if (!username || !password || loading) return;
     
+    setLoading(true);
     socket.emit('register_or_login', { username, password }, (res: any) => {
+      setLoading(false);
       if (res.success) {
         onLogin(username);
       } else {
@@ -25,8 +28,8 @@ export default function Login({ onLogin }: { onLogin: (username: string) => void
       <div className="w-full max-w-sm p-10 bg-[#0f0f12] rounded-3xl border border-[#222] shadow-[0_20px_40px_rgba(0,0,0,0.5)]">
         <div className="flex flex-col items-center gap-2 mb-8 justify-center">
           <MessageSquare className="w-10 h-10 text-indigo-500 mb-2" />
-          <h1 className="text-3xl font-black tracking-[-1px] uppercase">Chat-Liz</h1>
-          <div className="text-[10px] text-[#666] tracking-[2px] uppercase">Supervised by Elizabeth AI</div>
+          <h1 className="text-3xl font-bold tracking-tight uppercase font-display">Chat-Liz</h1>
+          <div className="text-[10px] text-indigo-400 font-medium tracking-[2px] uppercase">Supervised by Elizabeth AI</div>
         </div>
         <form onSubmit={handleLogin} className="flex flex-col gap-5">
           <div>
@@ -51,8 +54,8 @@ export default function Login({ onLogin }: { onLogin: (username: string) => void
             />
           </div>
           {error && <p className="text-red-500 text-xs mt-1 font-bold">{error}</p>}
-          <button type="submit" className="mt-2 w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-4 rounded-xl transition-colors tracking-wide uppercase text-sm">
-            Entrar al Chat
+          <button type="submit" disabled={loading} className="mt-2 w-full bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white font-bold py-4 rounded-xl transition-colors tracking-wide uppercase text-sm font-display">
+            {loading ? "Entrando..." : "Entrar al Chat"}
           </button>
         </form>
       </div>

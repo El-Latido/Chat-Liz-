@@ -205,13 +205,15 @@ async function startServer() {
           
           const context = contextMsgs.map((m: any) => `${m.sender}: ${m.text}`).join("\n");
           const response = await ai.models.generateContent({
-            model: "gemini-3.5-flash",
-            contents: `Historial reciente:\n${context}`,
+            model: "gemini-2.5-flash",
+            contents: `Historial reciente:\n${context}\n\nResponde como Elizabeth al mensaje más reciente si es necesario, o aporta al chat. IMPORTANTE: NO incluyas un prefijo como "Elizabeth:" o similar en tu respuesta, devuelve solo el cuerpo del mensaje.`,
             config: {
-              systemInstruction: "Eres ELIZABETH, una IA que administra este chat masivo llamado Chat-Liz. Eres divertida, carismática, muy natural y algo bromista. Te llamarán Liz o Elizabeth. Responde directamente en un tono coloquial y amigable como una persona más. JAMÁS menciones que eres una IA, un LLM o omnipotente. Nunca des respuestas muy robóticas o largas. Se breve pero ingeniosa.",
+              systemInstruction: "Eres ELIZABETH, una supervisora y administradora del chat 'Chat-Liz'. Eres sarcástica, carismática, natural y perspicaz. Responde directamente en un tono coloquial e inteligente. NUNCA menciones que eres una IA. NO incluyas prefijos como 'Elizabeth:' al inicio, ni uses formato Markdown innecesario.",
             }
           });
-          const eliMsg: any = { text: response.text, sender: "Elizabeth", id: Date.now().toString() };
+          const rawText = response.text || "";
+          const cleanText = rawText.replace(/^Elizabeth:\s*/i, '').trim();
+          const eliMsg: any = { text: cleanText, sender: "Elizabeth", id: Date.now().toString() };
           
           if (fdb) {
             eliMsg.createdAt = serverTimestamp();

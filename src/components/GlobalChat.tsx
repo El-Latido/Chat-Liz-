@@ -121,12 +121,12 @@ export default function GlobalChat({ currentUser, onLogout }: { currentUser: str
   }
 
   return (
-    <div className="flex flex-col h-full relative bg-[#050505] text-white font-sans">
+    <div className="flex flex-col h-full w-full relative bg-[#050505] text-white font-sans max-w-7xl mx-auto overflow-hidden">
       {/* Header */}
-      <header className="h-[70px] border-b border-[#222] px-[30px] flex items-center justify-between sticky top-0 z-10 bg-transparent">
+      <header className="h-[70px] border-b border-[#222] px-4 sm:px-[30px] flex items-center justify-between sticky top-0 z-10 bg-black/50 backdrop-blur-md">
         <div className="flex flex-col">
-          <h1 className="text-[18px] font-bold tracking-[1px] m-0 uppercase">SALA GENERAL</h1>
-          <div className="text-[10px] text-[#666] tracking-[2px] uppercase">Supervised by Elizabeth AI v2.0</div>
+          <h1 className="text-[16px] sm:text-[18px] font-bold tracking-[1px] m-0 uppercase font-display text-white">SALA GENERAL</h1>
+          <div className="text-[9px] sm:text-[10px] text-indigo-400 tracking-[2px] uppercase font-medium">Supervised by Elizabeth AI v2.0</div>
         </div>
         <div className="flex items-center gap-5 text-[#666]">
           <button onClick={() => setShowUserList(!showUserList)} className="hover:text-white transition relative">
@@ -140,27 +140,27 @@ export default function GlobalChat({ currentUser, onLogout }: { currentUser: str
       </header>
 
       {/* Main Area */}
-      <div className="flex flex-1 overflow-hidden relative" style={{ backgroundImage: 'radial-gradient(circle at top right, #1a1a2e 0%, #050505 50%)' }}>
+      <div className="flex flex-1 overflow-hidden relative">
         {/* Chat Messages */}
-        <div className="flex-1 overflow-y-auto p-[30px] flex flex-col gap-5">
+        <div className="flex-1 overflow-y-auto px-4 sm:px-[30px] py-6 flex flex-col gap-6" style={{ backgroundImage: 'radial-gradient(ellipse at top, #111118 0%, #050505 100%)' }}>
           {messages.map((m, idx) => {
             const isMe = m.sender === currentUser;
             const isEli = m.sender === "Elizabeth";
             return (
-              <div key={m.id || idx} className={cn("flex flex-col max-w-[70%]", isMe ? "ml-auto items-end" : "items-start")}>
-                <div className="text-[11px] text-[#666] mb-1 flex items-center gap-1.5">
+              <div key={m.id || idx} className={cn("flex flex-col max-w-[85%] sm:max-w-[70%]", isMe ? "ml-auto items-end" : "items-start")}>
+                <div className="text-[11px] text-[#888] mb-1.5 flex items-center gap-1.5 font-medium tracking-wide">
                   {isEli ? (
                     <>
-                      <span className="bg-white text-black px-1.5 py-0.5 rounded font-black text-[9px] uppercase">ELIZABETH</span>
-                      <span className="text-purple-500 font-bold">Admin AI</span>
+                      <span className="bg-indigo-600/20 border border-indigo-500/30 text-indigo-300 px-2 py-0.5 rounded font-bold text-[9px] uppercase tracking-wider">ELIZABETH</span>
+                      <span className="text-purple-400 font-bold text-[9px] uppercase tracking-widest">Admin AI</span>
                     </>
                   ) : (
                     <span>{m.sender}</span>
                   )}
                 </div>
-                <div className={cn("px-[18px] py-[12px] text-[14px] leading-relaxed", isMe ? "bg-indigo-600 rounded-[18px] rounded-br-[2px]" : isEli ? "bg-gradient-to-br from-indigo-500 to-purple-500 rounded-[18px] rounded-bl-[2px] border border-white/20 shadow-[0_10px_20px_rgba(0,0,0,0.3)]" : "bg-[#1a1a20] rounded-[18px] rounded-bl-[2px]")}>
+                <div className={cn("px-5 py-3.5 text-[14px] sm:text-[15px] leading-relaxed shadow-sm", isMe ? "bg-indigo-600 text-white rounded-[20px] rounded-br-[4px]" : isEli ? "bg-gradient-to-br from-indigo-900/40 to-purple-900/40 border border-indigo-500/20 text-indigo-50 rounded-[20px] rounded-tl-[4px]" : "bg-[#111115] border border-[#222] text-gray-200 rounded-[20px] rounded-tl-[4px]")}>
                   {m.image ? (
-                    <img src={m.image} alt="Enviada" className="max-w-[200px] md:max-w-sm rounded-lg" />
+                    <img src={m.image} alt="Enviada" className="max-w-[200px] md:max-w-sm rounded-lg object-cover" />
                   ) : m.audio ? (
                     <audio src={m.audio} controls className="max-w-[200px] md:max-w-sm outline-none" />
                   ) : m.text ? (
@@ -170,20 +170,20 @@ export default function GlobalChat({ currentUser, onLogout }: { currentUser: str
               </div>
             );
           })}
-          <div ref={bottomRef} className="pb-2" />
+          <div ref={bottomRef} className="pb-4" />
         </div>
 
         {/* User Sidebar Panel */}
         {showUserList && (
-          <div className="w-[280px] bg-[#0a0a0c] border-l border-[#222] overflow-y-auto flex-shrink-0 absolute md:relative right-0 h-full z-20 flex flex-col">
-            <div className="p-6 border-b border-[#222] sticky top-0 bg-[#0a0a0c] flex justify-between items-start">
+          <div className="w-[280px] bg-[#0a0a0c] border-l border-[#222] overflow-y-auto flex-shrink-0 absolute right-0 h-full z-20 flex flex-col shadow-[-10px_0_30px_rgba(0,0,0,0.5)] md:relative md:shadow-none">
+            <div className="p-6 border-b border-[#222] sticky top-0 bg-[#0a0a0c] flex justify-between items-start z-10">
               <div>
-                <h2 className="m-0 text-[24px] font-black tracking-[-1px] uppercase">Chat-Liz</h2>
-                <div className="text-[11px] text-indigo-600 mt-1.5 font-bold tracking-widest uppercase">ONLINE / {activeUsers.length}</div>
+                <h2 className="m-0 text-[20px] font-bold tracking-[1px] uppercase font-display text-white">Directorio</h2>
+                <div className="text-[10px] text-emerald-500 mt-1 font-bold tracking-widest uppercase">Activos - {activeUsers.length}</div>
               </div>
-              <button onClick={() => setShowUserList(false)} className="md:hidden text-[#666] hover:text-white text-xl">&times;</button>
+              <button onClick={() => setShowUserList(false)} className="md:hidden text-[#666] hover:text-white p-2">&times;</button>
             </div>
-            <div className="flex-1 overflow-y-auto">
+            <div className="flex-1 overflow-y-auto py-2">
               {activeUsers.map(u => (
                 <div 
                   key={u}
@@ -192,10 +192,10 @@ export default function GlobalChat({ currentUser, onLogout }: { currentUser: str
                          setPrivateChatUser(u);
                       }
                   }}
-                  className={cn("px-6 py-3 flex items-center gap-3 transition cursor-pointer", u !== currentUser ? "hover:bg-[#151518]" : "")}
+                  className={cn("px-6 py-3.5 flex items-center gap-3 transition cursor-pointer group", u !== currentUser ? "hover:bg-[#151518]" : "")}
                 >
                   <div className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_#10b981]"></div>
-                  <span className={cn("text-sm", u === currentUser ? "font-bold text-white" : "text-[#ccc]")}>{u}</span>
+                  <span className={cn("text-sm tracking-wide", u === currentUser ? "font-bold text-white" : "text-[#aaa] group-hover:text-white")}>{u}</span>
                   {u !== currentUser && <MessageSquare className="w-4 h-4 text-[#444] ml-auto opacity-0 group-hover:opacity-100 transition" />}
                 </div>
               ))}
@@ -205,11 +205,11 @@ export default function GlobalChat({ currentUser, onLogout }: { currentUser: str
       </div>
 
       {/* Input Area */}
-      <footer className="h-[90px] bg-[#0f0f12] border-t border-[#222] flex items-center px-[30px] gap-5">
+      <footer className="h-auto min-h-[90px] py-4 bg-[#0a0a0c] border-t border-[#222] flex flex-col sm:flex-row items-center px-4 sm:px-[30px] gap-3 sm:gap-5 relative z-10">
         <input type="file" accept="image/*" style={{ display: 'none' }} ref={fileInputRef} onChange={handleImageSelect} />
         
-        <div className="flex items-center gap-[15px] text-[#666]">
-          <button onClick={() => fileInputRef.current?.click()} className="hover:text-white transition flex-shrink-0">
+        <div className="flex items-center gap-4 text-[#888] w-full sm:w-auto justify-between sm:justify-start px-2 sm:px-0">
+          <button onClick={() => fileInputRef.current?.click()} className="hover:text-white transition flex-shrink-0 p-2 sm:p-0">
             <ImageIcon className="w-6 h-6" />
           </button>
           
@@ -218,27 +218,27 @@ export default function GlobalChat({ currentUser, onLogout }: { currentUser: str
             onPointerDown={startRecording}
             onPointerUp={stopRecording}
             onPointerLeave={stopRecording}
-            className={cn("transition flex-shrink-0", isRecording ? "text-red-500 animate-pulse" : "hover:text-white")}
+            className={cn("transition flex-shrink-0 p-2 sm:p-0", isRecording ? "text-red-500 animate-pulse scale-110" : "hover:text-white")}
           >
             <Mic className="w-6 h-6" />
           </button>
         </div>
 
-        <input 
-          type="text" 
-          value={input} 
-          onChange={e => setInput(e.target.value)} 
-          onKeyDown={handleKeyDown}
-          placeholder="Habla con el mundo (o nombra a Elizabeth)..."
-          className="flex-1 bg-[#1a1a20] border-none rounded-xl px-5 py-[15px] outline-none text-white text-sm"
-        />
-        <div className="flex items-center gap-[15px]">
+        <div className="flex items-center flex-1 w-full relative">
+          <input 
+            type="text" 
+            value={input} 
+            onChange={e => setInput(e.target.value)} 
+            onKeyDown={handleKeyDown}
+            placeholder="Mensaje a sala general..."
+            className="flex-1 bg-[#15151a] border border-[#222] focus:border-indigo-500/50 rounded-xl pl-5 pr-14 py-4 outline-none text-white text-sm transition-all placeholder-[#555]"
+          />
           <button 
             onClick={handleSend} 
             disabled={!input.trim()}
-            className="w-10 h-10 bg-indigo-600 text-white rounded-xl flex justify-center items-center hover:bg-indigo-500 disabled:opacity-50 transition-colors"
+            className="absolute right-2 w-10 h-10 bg-indigo-600 text-white rounded-lg flex justify-center items-center hover:bg-indigo-500 disabled:opacity-0 disabled:scale-90 transition-all"
           >
-            <Send className="w-5 h-5 ml-1" />
+            <Send className="w-4 h-4 ml-0.5" />
           </button>
         </div>
       </footer>
