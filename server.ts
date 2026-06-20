@@ -3,10 +3,11 @@ import http from "http";
 import path from "path";
 import { Server } from "socket.io";
 import { createServer as createViteServer } from "vite";
+import { initializeApp } from "firebase/app";
+import { getFirestore, collection, doc, getDoc, setDoc, updateDoc, deleteDoc, getDocs, addDoc, query, orderBy, limitToLast, limit, serverTimestamp, getCountFromServer } from "firebase/firestore";
 import fs from "fs";
 import { GoogleGenAI } from "@google/genai";
 import dotenv from "dotenv";
-import mongoose from "mongoose";
 
 dotenv.config();
 
@@ -19,34 +20,21 @@ const ai = new GoogleGenAI({
   },
 });
 
-// MongoDB Setup
-const mongoURI = process.env.MONGODB_URI;
-
-const userSchema = new mongoose.Schema({
-  username: { type: String, required: true, unique: true },
-  password: { type: String, required: true }
-});
-const User = mongoose.model("User", userSchema);
-
-const messageSchema = new mongoose.Schema({
-  id: String,
-  sender: String,
-  text: String,
-  image: String,
-  audio: String,
-  createdAt: { type: Date, default: Date.now }
-});
-const Message = mongoose.model("Message", messageSchema);
-
-if (mongoURI) {
-  mongoose.connect(mongoURI).then(() => {
-    console.log("Connected to MongoDB Atlas");
-  }).catch(err => {
-    console.error("MongoDB Connection Error:", err);
-  });
+// Firebase Setup
+let fdb: any = null;
+try {
+  const configPath = path.join(process.cwd(), "firebase-applet-config.json");
+  if (fs.existsSync(configPath)) {
+    const firebaseConfig = JSON.parse(fs.readFileSync(configPath, "utf8"));
+    const appInfo = initializeApp(firebaseConfig);
+    fdb = getFirestore(appInfo, firebaseConfig.firestoreDatabaseId || undefined);
+    console.log("Firebase initialized");
+  }
+} catch(e) {
+  console.error("Firebase initialization failed:", e);
 }
 
-// Fallback JSON DB if no MongoDB configured
+// Fallback JSON DB if no Firebase configured (e.g. initial setup)
 const DB_FILE = path.join(process.cwd(), "db.json");
 interface DBState {
   users: Record<string, string>;
@@ -55,7 +43,7 @@ interface DBState {
 let fallbackState: DBState = { users: {}, globalMessages: [] };
 
 try {
-  if (!mongoURI && fs.existsSync(DB_FILE)) {
+  if (!fdb && fs.existsSync(DB_FILE)) {
     const data = JSON.parse(fs.readFileSync(DB_FILE, "utf8"));
     fallbackState.users = data.users || {};
     fallbackState.globalMessages = data.globalMessages || [];
@@ -65,7 +53,7 @@ try {
 }
 
 function saveFallbackDB() {
-  if (!mongoURI) {
+  if (!fdb) {
     fs.writeFileSync(DB_FILE, JSON.stringify(fallbackState, null, 2));
   }
 }
@@ -88,16 +76,18 @@ async function startServer() {
       const { username, password } = data;
       if (!username || !password) return callback({ success: false, error: "Missing fields" });
 
-      if (mongoURI) {
+      if (fdb) {
         try {
-          const user = await User.findOne({ username });
-          if (user) {
-            if (user.password !== password) return callback({ success: false, error: "Contraseña incorrecta" });
+          const userDocRef = doc(fdb, 'users', username);
+          const userDoc = await getDoc(userDocRef);
+          if (userDoc.exists()) {
+            const user = userDoc.data();
+            if (user?.password !== password) return callback({ success: false, error: "Contraseña incorrecta" });
           } else {
-            await User.create({ username, password });
+            await setDoc(userDocRef, { username, password });
             setTimeout(async () => {
-              const msg = { text: `¡Uy! ¿Alguien nuevo? ¡Bienvenido/a al chat, ${username}! Qué bueno verte por aquí. 😏`, sender: "Elizabeth", id: Date.now().toString() };
-              await Message.create(msg);
+              const msg = { text: `¡Uy! ¿Alguien nuevo? ¡Bienvenido/a al chat, ${username}! Qué bueno verte por aquí. 😏`, sender: "Elizabeth", id: Date.now().toString(), createdAt: serverTimestamp() };
+              await addDoc(collection(fdb, 'messages'), msg);
               io.emit("receive_global", msg);
             }, 1000);
           }
@@ -130,13 +120,20 @@ async function startServer() {
       const { oldUsername, newUsername, newPassword } = data;
       if (oldUsername !== currentUsername) return callback({ success: false, error: "Unauthorized" });
 
-      if (mongoURI) {
+      if (fdb) {
         try {
           if (newUsername !== oldUsername) {
-            const exists = await User.findOne({ username: newUsername });
-            if (exists) return callback({ success: false, error: "El usuario ya existe" });
+            const existsDoc = await getDoc(doc(fdb, 'users', newUsername || ""));
+            if (existsDoc.exists()) return callback({ success: false, error: "El usuario ya existe" });
+            const oldUserDocRef = doc(fdb, 'users', oldUsername);
+            const oldUserDoc = await getDoc(oldUserDocRef);
+            if (oldUserDoc.exists()) {
+              await setDoc(doc(fdb, 'users', newUsername || ""), { username: newUsername, password: newPassword });
+              await deleteDoc(oldUserDocRef);
+            }
+          } else {
+            await updateDoc(doc(fdb, 'users', oldUsername), { password: newPassword });
           }
-          await User.findOneAndUpdate({ username: oldUsername }, { username: newUsername || oldUsername, password: newPassword });
         } catch (err) {
           console.error(err);
           return callback({ success: false, error: "Database error" });
@@ -157,9 +154,11 @@ async function startServer() {
     });
 
     socket.on("get_global_history", async (callback) => {
-      if (mongoURI) {
+      if (fdb) {
         try {
-          const msgs = await Message.find().sort({ createdAt: 1 }).limit(100);
+          const q = query(collection(fdb, 'messages'), orderBy('createdAt', 'asc'), limitToLast(100));
+          const snapshot = await getDocs(q);
+          const msgs = snapshot.docs.map(doc => doc.data());
           callback(msgs);
         } catch (err) {
           callback([]);
@@ -174,12 +173,16 @@ async function startServer() {
       msg.sender = currentUsername;
       msg.id = Date.now().toString();
 
-      if (mongoURI) {
-        await Message.create(msg);
-        const count = await Message.countDocuments();
-        if (count > 100) {
-           const oldest = await Message.findOne().sort({ createdAt: 1 });
-           if (oldest) await Message.deleteOne({ _id: oldest._id });
+      if (fdb) {
+        let dbMsg: any = { ...msg, createdAt: serverTimestamp() };
+        await addDoc(collection(fdb, 'messages'), dbMsg);
+        const countSnapshot = await getCountFromServer(collection(fdb, 'messages'));
+        if (countSnapshot.data().count > 100) {
+           const oldestQ = query(collection(fdb, 'messages'), orderBy('createdAt', 'asc'), limit(1));
+           const oldest = await getDocs(oldestQ);
+           if (!oldest.empty) {
+             await deleteDoc(oldest.docs[0].ref);
+           }
         }
       } else {
         fallbackState.globalMessages.push(msg);
@@ -192,9 +195,10 @@ async function startServer() {
       if (msg.text && (msg.text.toLowerCase().includes("elizabeth") || msg.text.toLowerCase().includes("liz"))) {
         try {
           let contextMsgs = [];
-          if (mongoURI) {
-             contextMsgs = await Message.find().sort({ createdAt: -1 }).limit(10);
-             contextMsgs.reverse();
+          if (fdb) {
+             const recentQ = query(collection(fdb, 'messages'), orderBy('createdAt', 'desc'), limit(10));
+             const snapshot = await getDocs(recentQ);
+             contextMsgs = snapshot.docs.map(doc => doc.data()).reverse();
           } else {
              contextMsgs = fallbackState.globalMessages.slice(-10);
           }
@@ -207,10 +211,11 @@ async function startServer() {
               systemInstruction: "Eres ELIZABETH, una IA que administra este chat masivo llamado Chat-Liz. Eres divertida, carismática, muy natural y algo bromista. Te llamarán Liz o Elizabeth. Responde directamente en un tono coloquial y amigable como una persona más. JAMÁS menciones que eres una IA, un LLM o omnipotente. Nunca des respuestas muy robóticas o largas. Se breve pero ingeniosa.",
             }
           });
-          const eliMsg = { text: response.text, sender: "Elizabeth", id: Date.now().toString() };
+          const eliMsg: any = { text: response.text, sender: "Elizabeth", id: Date.now().toString() };
           
-          if (mongoURI) {
-            await Message.create(eliMsg);
+          if (fdb) {
+            eliMsg.createdAt = serverTimestamp();
+            await addDoc(collection(fdb, 'messages'), eliMsg);
           } else {
             fallbackState.globalMessages.push(eliMsg);
             saveFallbackDB();
