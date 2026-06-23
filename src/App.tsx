@@ -173,12 +173,12 @@ function MainApp() {
 
   if (!isLoggedIn) {
     return (
-      <div className="fixed inset-0 flex flex-col items-center justify-center p-4 bg-[#0a0a0f] overflow-hidden font-sans" 
+      <div className="fixed inset-0 w-screen h-screen flex flex-col items-center justify-center p-4 bg-[#0a0a0f] overflow-hidden font-sans" 
            style={{ 
               backgroundImage: 'radial-gradient(circle at center, #131720 0%, #050508 100%), url("data:image/svg+xml,%3Csvg width=\'24\' height=\'24\' viewBox=\'0 0 24 24\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cpath d=\'M0 0h1v1H0V0zm12 12h1v1h-1v-1z\' fill=\'rgba(255,255,255,0.02)\' fill-rule=\'evenodd\'/%3E%3C/svg%3E")' 
            }}>
         
-        <div className="relative w-full max-w-[480px]">
+        <div className="relative w-full max-w-[480px] mx-auto auto-rows-max">
           {/* Outer glowing reflection container */}
           <div className="relative z-10 p-1 sm:p-[2px] rounded-[24px]">
              
@@ -266,13 +266,6 @@ function MainApp() {
              <div className="w-full h-full border-t-2 border-[#00f2fe] rounded-[24px] rounded-b-none absolute top-[-10px] transform scale-y-[-1]" 
                   style={{ maskImage: 'linear-gradient(to bottom, black, transparent)', WebkitMaskImage: 'linear-gradient(to bottom, black, transparent)', background: 'linear-gradient(90deg, #00f2fe 0%, #f5576c 100%)', filter: 'blur(2px)' }}></div>
           </div>
-        </div>
-
-        {/* Decorative Sparkle SVG in bottom right */}
-        <div className="absolute bottom-12 right-12 text-gray-500/30 w-8 h-8">
-            <svg viewBox="0 0 24 24" fill="currentColor">
-               <path d="M12 0l2 8 8 2-8 2-2 8-2-8-8-2 8-2z"/>
-            </svg>
         </div>
       </div>
     );
