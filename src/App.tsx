@@ -41,11 +41,12 @@ interface UserObj {
   statusMessage?: string;
   role?: string;
   countryLanguage?: string;
+  securityEmail?: string;
 }
 
 function MainApp() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [user, setUser] = useState<UserObj & {password?: string}>({ username: '', password: '', countryLanguage: 'es' });
+  const [user, setUser] = useState<UserObj & {password?: string, securityEmail?: string}>({ username: '', password: '', countryLanguage: 'es', securityEmail: '' });
   const [isConfigOpen, setIsConfigOpen] = useState(false);
   const [profileForm, setProfileForm] = useState<UserObj & {password?: string}>({ username: '', password: '', profilePic: '', statusMessage: 'Disponible', countryLanguage: 'es' });
   const [selectedUserModal, setSelectedUserModal] = useState<UserObj | null>(null);
@@ -58,6 +59,14 @@ function MainApp() {
   
   const [usersOnline, setUsersOnline] = useState<UserObj[]>([{ username: 'Elizabeth', statusMessage: 'IA Asistente virtual', role: 'admin' }]); 
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
+  // Recovery States
+  const [recoveryModalOpen, setRecoveryModalOpen] = useState(false);
+  const [recoveryStep, setRecoveryStep] = useState(1);
+  const [recoveryUsername, setRecoveryUsername] = useState('');
+  const [recoveryCodeStr, setRecoveryCodeStr] = useState('');
+  const [inputRecoveryCode, setInputRecoveryCode] = useState('');
+  const [newPassword, setNewPassword] = useState('');
 
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [isRecording, setIsRecording] = useState(false);
@@ -92,7 +101,10 @@ function MainApp() {
         setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
       });
     } else {
-      setMessages([]);
+      socket.emit('get_private_history', activeChat, (historyMsgs: any[]) => {
+        setMessages(historyMsgs);
+        setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
+      });
     }
     
     socket.on('receive_global', (msg: any) => {
@@ -283,6 +295,26 @@ function MainApp() {
                    </div>
 
                    <div style={{ position: 'relative' }}>
+                     <div style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: 'rgba(0, 242, 254, 0.7)', pointerEvents: 'none', zIndex: 10 }}>
+                        <Lock size={20} strokeWidth={2} />
+                     </div>
+                     <input 
+                       style={{
+                         width: '100%', backgroundColor: 'rgba(24, 27, 43, 0.8)', padding: '16px 16px 16px 48px',
+                         borderRadius: '12px', border: '1px solid rgba(255,255,255,0.1)', outline: 'none',
+                         color: 'white', fontSize: '15px', backdropFilter: 'blur(5px)',
+                         boxShadow: 'inset 0 2px 10px rgba(0,0,0,0.5)', transition: 'all 0.3s ease',
+                         boxSizing: 'border-box'
+                       }}
+                       type="email" 
+                       onFocus={(e) => { e.currentTarget.style.border = '1px solid rgba(0, 242, 254, 0.5)'; e.currentTarget.style.boxShadow = '0 0 15px rgba(0,242,254,0.2), inset 0 2px 10px rgba(0,0,0,0.5)'; }}
+                       onBlur={(e) => { e.currentTarget.style.border = '1px solid rgba(255,255,255,0.1)'; e.currentTarget.style.boxShadow = 'inset 0 2px 10px rgba(0,0,0,0.5)'; }}
+                       placeholder="Email de Recuperación (Opcional)" 
+                       onChange={e => setUser({...user, securityEmail: e.target.value})} 
+                     />
+                   </div>
+
+                   <div style={{ position: 'relative' }}>
                      <select
                        style={{
                          width: '100%', backgroundColor: 'rgba(24, 27, 43, 0.8)', padding: '16px',
@@ -308,7 +340,7 @@ function MainApp() {
                    </div>
 
                    <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '-8px' }}>
-                      <a href="#" style={{ fontSize: '14px', color: '#d1d5db', textDecoration: 'underline', textUnderlineOffset: '4px', textDecorationColor: '#6b7280' }} onMouseOver={e => { e.currentTarget.style.color='#00f2fe'; e.currentTarget.style.textDecorationColor='#00f2fe'; }} onMouseOut={e => { e.currentTarget.style.color='#d1d5db'; e.currentTarget.style.textDecorationColor='#6b7280'; }}>¿Olvidaste tu contraseña?</a>
+                      <a href="#" onClick={(e) => { e.preventDefault(); setRecoveryModalOpen(true); }} style={{ fontSize: '14px', color: '#d1d5db', textDecoration: 'underline', textUnderlineOffset: '4px', textDecorationColor: '#6b7280' }} onMouseOver={e => { e.currentTarget.style.color='#00f2fe'; e.currentTarget.style.textDecorationColor='#00f2fe'; }} onMouseOut={e => { e.currentTarget.style.color='#d1d5db'; e.currentTarget.style.textDecorationColor='#6b7280'; }}>¿Olvidaste tu contraseña?</a>
                    </div>
 
                    <button 
@@ -343,6 +375,84 @@ function MainApp() {
                background: 'linear-gradient(90deg, #00f2fe 0%, #f5576c 100%)', filter: 'blur(3px)'
              }}></div>
           </div>
+
+          {recoveryModalOpen && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm shadow-2xl">
+               <div className="bg-[#0f111a] p-6 rounded-2xl border border-white/10 w-full max-w-sm relative">
+                  <button onClick={() => { setRecoveryModalOpen(false); setRecoveryStep(1); }} className="absolute text-gray-500 top-4 right-4 hover:text-white">
+                     <X size={20} />
+                  </button>
+                  <h3 className="mb-4 text-xl font-bold text-center text-white">Recuperar Contraseña</h3>
+                  
+                  {recoveryStep === 1 && (
+                     <div className="space-y-4">
+                        <p className="text-sm text-gray-400">Ingresa tu usuario para solicitar un código de recuperación.</p>
+                        <input className="w-full p-3 text-white transition-all border outline-none bg-white/5 rounded-xl border-white/10 focus:border-cyan-500" placeholder="Usuario" value={recoveryUsername} onChange={e => setRecoveryUsername(e.target.value)} />
+                        <button 
+                           onClick={() => {
+                              if (!recoveryUsername) return;
+                              socket.emit('forgot_password_request', recoveryUsername, (res: any) => {
+                                 if (res.success) {
+                                    setRecoveryCodeStr(res.code);
+                                    setRecoveryStep(2);
+                                 } else {
+                                    alert(res.error);
+                                 }
+                              });
+                           }}
+                           className="w-full p-3 font-bold text-white transition-all shadow-lg bg-gradient-to-r from-cyan-500 to-blue-500 rounded-xl hover:shadow-cyan-500/50"
+                        >
+                           Enviar Código
+                        </button>
+                     </div>
+                  )}
+
+                  {recoveryStep === 2 && (
+                     <div className="space-y-4">
+                        <p className="text-sm text-gray-400">Este es tu código de recuperación: <strong className="text-cyan-400">{recoveryCodeStr}</strong></p>
+                        <input className="w-full p-3 text-white transition-all border outline-none bg-white/5 rounded-xl border-white/10 focus:border-cyan-500" placeholder="Ingresa el código" value={inputRecoveryCode} onChange={e => setInputRecoveryCode(e.target.value.toUpperCase())} />
+                        <button 
+                           onClick={() => {
+                              if (inputRecoveryCode === recoveryCodeStr) {
+                                 setRecoveryStep(3);
+                              } else {
+                                 alert("Código incorrecto");
+                              }
+                           }}
+                           className="w-full p-3 font-bold text-white transition-all shadow-lg bg-gradient-to-r from-cyan-500 to-blue-500 rounded-xl hover:shadow-cyan-500/50"
+                        >
+                           Verificar
+                        </button>
+                     </div>
+                  )}
+
+                  {recoveryStep === 3 && (
+                     <div className="space-y-4">
+                        <p className="text-sm text-gray-400">Ingresa tu nueva contraseña para cambiarla.</p>
+                        <input type="password" className="w-full p-3 text-white transition-all border outline-none bg-white/5 rounded-xl border-white/10 focus:border-cyan-500" placeholder="Nueva Contraseña" value={newPassword} onChange={e => setNewPassword(e.target.value)} />
+                        <button 
+                           onClick={() => {
+                              if (!newPassword) return;
+                              socket.emit('forgot_password_reset', { username: recoveryUsername, newPassword, code: inputRecoveryCode }, (res: any) => {
+                                 if (res.success) {
+                                    alert("Contraseña actualizada exitosamente.");
+                                    setRecoveryModalOpen(false);
+                                    setRecoveryStep(1);
+                                 } else {
+                                    alert(res.error);
+                                 }
+                              });
+                           }}
+                           className="w-full p-3 font-bold text-white transition-all shadow-lg bg-gradient-to-r from-cyan-500 to-blue-500 rounded-xl hover:shadow-cyan-500/50"
+                        >
+                           Cambiar Contraseña
+                        </button>
+                     </div>
+                  )}
+               </div>
+            </div>
+          )}
+
         </div>
       </div>
     );
@@ -646,7 +756,7 @@ function MainApp() {
                 onClick={() => {
                   socket.emit('update_profile', { oldUsername: user.username, newUsername: profileForm.username, newPassword: profileForm.password, profilePic: profileForm.profilePic, statusMessage: profileForm.statusMessage, countryLanguage: profileForm.countryLanguage }, (res: any) => {
                     if (res.success) {
-                        setUser({...user, password: profileForm.password, profilePic: profileForm.profilePic, statusMessage: profileForm.statusMessage, countryLanguage: profileForm.countryLanguage });
+                        setUser({...user, username: res.username, password: profileForm.password, profilePic: res.profilePic, statusMessage: res.statusMessage, countryLanguage: res.countryLanguage });
                         setIsConfigOpen(false);
                     } else {
                         alert(res.error);
