@@ -173,12 +173,12 @@ function MainApp() {
 
   if (!isLoggedIn) {
     return (
-      <div className="h-screen relative flex flex-col items-center justify-center p-4 bg-[#0a0a0f] overflow-hidden font-sans" 
+      <div className="fixed inset-0 flex flex-col items-center justify-center p-4 bg-[#0a0a0f] overflow-hidden font-sans" 
            style={{ 
               backgroundImage: 'radial-gradient(circle at center, #131720 0%, #050508 100%), url("data:image/svg+xml,%3Csvg width=\'24\' height=\'24\' viewBox=\'0 0 24 24\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cpath d=\'M0 0h1v1H0V0zm12 12h1v1h-1v-1z\' fill=\'rgba(255,255,255,0.02)\' fill-rule=\'evenodd\'/%3E%3C/svg%3E")' 
            }}>
         
-        <div className="relative w-full max-w-[480px] mt-[-5%]">
+        <div className="relative w-full max-w-[480px]">
           {/* Outer glowing reflection container */}
           <div className="relative z-10 p-1 sm:p-[2px] rounded-[24px]">
              
