@@ -440,7 +440,7 @@ function MainApp() {
                      </button>
                      <h2 className="text-[16px] md:text-lg font-bold text-white flex items-center gap-2">
                         {activeChat === 'global' ? 'CHAT GLOBAL #1 - Chat-Liz' : (activeChat === 'Elizabeth' ? 'Private Chat: Elizabeth' : `Private Chat: ${activeChat}`)}
-                        {activeChat === 'global' && <span className="text-sm font-normal text-gray-500 ml-1">({usersOnline.length} usuarios online)</span>}
+                        {activeChat === 'global' && <span className="text-sm font-normal text-gray-500 ml-1">({usersOnline.filter(u => u.username !== 'Elizabeth').length + 1} usuarios online)</span>}
                      </h2>
                   </div>
                   {activeChat === 'global' && (
