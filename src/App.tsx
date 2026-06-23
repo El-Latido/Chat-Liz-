@@ -3,7 +3,7 @@ import {
   Send, User, MessageCircle, Settings, Bot, 
   Image as ImageIcon, Mic, StopCircle, 
   Menu, X, Hash, MessageSquare, LogOut, Search,
-  Paperclip, Smile
+  Paperclip, Smile, Lock, EyeOff
 } from 'lucide-react';
 import { socket } from './socket';
 
@@ -173,49 +173,106 @@ function MainApp() {
 
   if (!isLoggedIn) {
     return (
-      <div className="h-screen relative flex items-center justify-center p-6 bg-[#0a0a16] overflow-hidden">
-        {/* Background glow effects */}
-        <div className="absolute inset-0 z-0 bg-gradient-radial from-[#131b2e] to-[#0a0a16]"></div>
-        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-cyan-600/10 blur-[100px] rounded-full"></div>
-        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-purple-600/10 blur-[100px] rounded-full"></div>
+      <div className="h-screen relative flex flex-col items-center justify-center p-4 bg-[#0a0a0f] overflow-hidden font-sans" 
+           style={{ 
+              backgroundImage: 'radial-gradient(circle at center, #131720 0%, #050508 100%), url("data:image/svg+xml,%3Csvg width=\'24\' height=\'24\' viewBox=\'0 0 24 24\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cpath d=\'M0 0h1v1H0V0zm12 12h1v1h-1v-1z\' fill=\'rgba(255,255,255,0.02)\' fill-rule=\'evenodd\'/%3E%3C/svg%3E")' 
+           }}>
         
-        <div className="w-full max-w-md bg-[#13151f]/80 backdrop-blur-xl p-10 rounded-3xl border border-white/5 shadow-2xl z-10">
-          <div className="mb-10 text-center flex flex-col items-center">
-            <div className="flex items-center gap-2 mb-6">
-                <MessageCircle size={40} className="text-cyan-400" />
-                <h2 className="text-3xl font-bold text-white tracking-tight">
-                  Chat-Liz
-                </h2>
-            </div>
-            <p className="text-gray-400 text-sm font-medium">Inicia sesión para conectarte al servidor global</p>
+        <div className="relative w-full max-w-[480px] mt-[-5%]">
+          {/* Outer glowing reflection container */}
+          <div className="relative z-10 p-1 sm:p-[2px] rounded-[24px]">
+             
+             {/* Main Sci-Fi Container */}
+             <div className="relative bg-[#0d111a]/80 backdrop-blur-xl rounded-[22px] overflow-hidden"
+                  style={{
+                     boxShadow: '0 0 40px rgba(0, 255, 255, 0.1), inset 0 0 30px rgba(0, 255, 255, 0.05)',
+                     border: '2px solid transparent',
+                     backgroundClip: 'padding-box',
+                     backgroundImage: 'linear-gradient(#0d111a, #0d111a)'
+                  }}>
+                
+                {/* Gradient Border Underlying */}
+                <div className="absolute inset-[-2px] z-[-1] rounded-[24px]"
+                     style={{
+                        background: 'linear-gradient(90deg, #00f2fe 0%, #4facfe 30%, #f093fb 70%, #f5576c 100%)',
+                     }}></div>
+
+                {/* Circuit Grid Background inside panel */}
+                <div className="absolute inset-0 z-0 opacity-[0.05]"
+                     style={{
+                        backgroundImage: 'linear-gradient(rgba(255,255,255,1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,1) 1px, transparent 1px)',
+                        backgroundSize: '20px 20px'
+                     }}></div>
+
+                {/* Corner Tech Brackets */}
+                <div className="absolute top-0 left-0 w-16 h-16 border-t-[4px] border-l-[4px] border-[#00f2fe] rounded-tl-[22px] shadow-[0_0_15px_#00f2fe] z-20 pointer-events-none"></div>
+                <div className="absolute top-0 right-0 w-16 h-16 border-t-[4px] border-r-[4px] border-[#f5576c] rounded-tr-[22px] shadow-[0_0_15px_#f5576c] z-20 pointer-events-none"></div>
+                <div className="absolute bottom-0 left-0 w-16 h-16 border-b-[4px] border-l-[4px] border-[#00f2fe] rounded-bl-[22px] shadow-[0_0_15px_#00f2fe] z-20 pointer-events-none"></div>
+                <div className="absolute bottom-0 right-0 w-16 h-16 border-b-[4px] border-r-[4px] border-[#f5576c] rounded-br-[22px] shadow-[0_0_15px_#f5576c] z-20 pointer-events-none"></div>
+                
+                {/* Subtle side glowing overlays */}
+                <div className="absolute top-1/4 bottom-1/4 left-0 w-px bg-[#00f2fe] shadow-[0_0_10px_2px_#00f2fe]"></div>
+                <div className="absolute top-1/4 bottom-1/4 right-0 w-px bg-[#f5576c] shadow-[0_0_10px_2px_#f5576c]"></div>
+
+                <div className="relative z-10 px-8 py-12 space-y-6">
+                   <div className="relative group">
+                     <div className="absolute left-4 top-1/2 -translate-y-1/2 text-cyan-200/50 group-focus-within:text-[#00f2fe] transition-colors pointer-events-none z-10">
+                        <User size={20} strokeWidth={2} />
+                     </div>
+                     <input 
+                       className="w-full bg-[#181b2b]/60 p-4 pl-12 rounded-xl border border-white/10 outline-none focus:border-[#00f2fe]/50 focus:bg-[#181b2b] focus:shadow-[0_0_15px_rgba(0,242,254,0.2)] transition-all text-white placeholder:text-gray-400 text-[15px]" 
+                       placeholder="Nombre de Usuario..." 
+                       onChange={e => setUser({...user, username: e.target.value})} 
+                     />
+                   </div>
+
+                   <div className="relative group">
+                     <div className="absolute left-4 top-1/2 -translate-y-1/2 text-cyan-200/50 group-focus-within:text-[#00f2fe] transition-colors pointer-events-none z-10">
+                        <Lock size={20} strokeWidth={2} />
+                     </div>
+                     <input 
+                       className="w-full bg-[#181b2b]/60 p-4 pl-12 pr-12 rounded-xl border border-white/10 outline-none focus:border-[#00f2fe]/50 focus:bg-[#181b2b] focus:shadow-[0_0_15px_rgba(0,242,254,0.2)] transition-all text-white placeholder:text-gray-400 text-[15px]" 
+                       type="password" 
+                       placeholder="Contraseña..." 
+                       onChange={e => setUser({...user, password: e.target.value})} 
+                       onKeyDown={(e) => e.key === 'Enter' && handleLogin()}
+                     />
+                     <button className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-white transition-colors">
+                        <EyeOff size={20} strokeWidth={2} />
+                     </button>
+                   </div>
+
+                   <div className="flex justify-end pt-1">
+                      <a href="#" className="text-[14px] text-gray-300 hover:text-[#00f2fe] underline decoration-gray-500 hover:decoration-[#00f2fe] underline-offset-4 transition-colors">¿Olvidaste tu contraseña?</a>
+                   </div>
+
+                   <button 
+                     onClick={handleLogin} 
+                     className="w-full mt-4 bg-gradient-to-r from-[#00f2fe] to-[#f5576c] text-white py-4 rounded-xl font-bold tracking-wide hover:shadow-[0_0_30px_rgba(0,242,254,0.4)] transition-all duration-300 text-[16px] shadow-[0_0_15px_rgba(245,87,108,0.3)] border border-white/20 relative overflow-hidden group"
+                   >
+                     <div className="absolute inset-0 bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                     <span className="relative z-10 text-white drop-shadow-md">ENTRAR AL CHAT</span>
+                   </button>
+
+                   <div className="text-center pt-2">
+                      <a href="#" className="text-[14px] text-gray-300 hover:text-white underline decoration-gray-500 hover:decoration-white underline-offset-4 transition-colors">Crear nueva cuenta</a>
+                   </div>
+                </div>
+             </div>
           </div>
           
-          <div className="space-y-5">
-            <div className="space-y-2">
-              <label className="text-sm font-semibold text-gray-300 pl-1">Identificador</label>
-              <input 
-                className="w-full bg-[#0a0c14] p-4 rounded-xl border border-white/10 outline-none focus:border-cyan-500 focus:shadow-[0_0_15px_rgba(6,182,212,0.3)] transition-all text-white placeholder:text-gray-600" 
-                placeholder="Ingresa tu nombre (ej. Alex)" 
-                onChange={e => setUser({...user, username: e.target.value})} 
-              />
-            </div>
-            <div className="space-y-2">
-              <label className="text-sm font-semibold text-gray-300 pl-1">Contraseña</label>
-              <input 
-                className="w-full bg-[#0a0c14] p-4 rounded-xl border border-white/10 outline-none focus:border-cyan-500 focus:shadow-[0_0_15px_rgba(6,182,212,0.3)] transition-all text-white placeholder:text-gray-600" 
-                type="password" 
-                placeholder="••••••••" 
-                onChange={e => setUser({...user, password: e.target.value})} 
-                onKeyDown={(e) => e.key === 'Enter' && handleLogin()}
-              />
-            </div>
-            <button 
-              onClick={handleLogin} 
-              className="w-full mt-4 bg-gradient-to-r from-cyan-500 to-blue-500 text-white p-4 rounded-xl font-bold hover:shadow-[0_0_20px_rgba(6,182,212,0.5)] transition-all duration-300 flex justify-center items-center gap-2 border border-cyan-400/50"
-            >
-              Iniciar Conexión
-            </button>
+          {/* Glass Reflection Under Container */}
+          <div className="relative mt-2 h-20 overflow-hidden mx-8 opacity-40">
+             <div className="w-full h-full border-t-2 border-[#00f2fe] rounded-[24px] rounded-b-none absolute top-[-10px] transform scale-y-[-1]" 
+                  style={{ maskImage: 'linear-gradient(to bottom, black, transparent)', WebkitMaskImage: 'linear-gradient(to bottom, black, transparent)', background: 'linear-gradient(90deg, #00f2fe 0%, #f5576c 100%)', filter: 'blur(2px)' }}></div>
           </div>
+        </div>
+
+        {/* Decorative Sparkle SVG in bottom right */}
+        <div className="absolute bottom-12 right-12 text-gray-500/30 w-8 h-8">
+            <svg viewBox="0 0 24 24" fill="currentColor">
+               <path d="M12 0l2 8 8 2-8 2-2 8-2-8-8-2 8-2z"/>
+            </svg>
         </div>
       </div>
     );
