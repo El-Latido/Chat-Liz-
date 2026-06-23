@@ -173,98 +173,136 @@ function MainApp() {
 
   if (!isLoggedIn) {
     return (
-      <div className="fixed inset-0 w-screen h-screen flex flex-col items-center justify-center p-4 bg-[#0a0a0f] overflow-hidden font-sans" 
-           style={{ 
-              backgroundImage: 'radial-gradient(circle at center, #131720 0%, #050508 100%), url("data:image/svg+xml,%3Csvg width=\'24\' height=\'24\' viewBox=\'0 0 24 24\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cpath d=\'M0 0h1v1H0V0zm12 12h1v1h-1v-1z\' fill=\'rgba(255,255,255,0.02)\' fill-rule=\'evenodd\'/%3E%3C/svg%3E")' 
-           }}>
-        
-        <div className="relative w-full max-w-[480px] mx-auto auto-rows-max">
-          {/* Outer glowing reflection container */}
-          <div className="relative z-10 p-1 sm:p-[2px] rounded-[24px]">
+      <div style={{
+        minHeight: '100vh',
+        width: '100%',
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: '#050508',
+        backgroundImage: 'radial-gradient(circle at center, #131720 0%, #050508 100%), url("data:image/svg+xml,%3Csvg width=\'24\' height=\'24\' viewBox=\'0 0 24 24\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cpath d=\'M0 0h1v1H0V0zm12 12h1v1h-1v-1z\' fill=\'rgba(255,255,255,0.02)\' fill-rule=\'evenodd\'/%3E%3C/svg%3E")',
+        fontFamily: 'Inter, sans-serif'
+      }}>
+        <div style={{ position: 'relative', width: '100%', maxWidth: '480px', margin: '0 auto', padding: '0 20px', boxSizing: 'border-box' }}>
+          
+          <div style={{
+            position: 'relative',
+            zIndex: 10,
+            padding: '2px',
+            borderRadius: '24px',
+            background: 'linear-gradient(90deg, #00f2fe 0%, #4facfe 30%, #f093fb 70%, #f5576c 100%)',
+            boxShadow: '0 0 20px rgba(0, 242, 254, 0.4), 0 0 40px rgba(245, 87, 108, 0.2)'
+          }}>
              
-             {/* Main Sci-Fi Container */}
-             <div className="relative bg-[#0d111a]/80 backdrop-blur-xl rounded-[22px] overflow-hidden"
-                  style={{
-                     boxShadow: '0 0 40px rgba(0, 255, 255, 0.1), inset 0 0 30px rgba(0, 255, 255, 0.05)',
-                     border: '2px solid transparent',
-                     backgroundClip: 'padding-box',
-                     backgroundImage: 'linear-gradient(#0d111a, #0d111a)'
-                  }}>
+             <div style={{
+                position: 'relative',
+                backgroundColor: 'rgba(13, 17, 26, 0.95)',
+                backdropFilter: 'blur(10px)',
+                borderRadius: '22px',
+                overflow: 'hidden',
+                padding: '48px 32px'
+             }}>
                 
-                {/* Gradient Border Underlying */}
-                <div className="absolute inset-[-2px] z-[-1] rounded-[24px]"
-                     style={{
-                        background: 'linear-gradient(90deg, #00f2fe 0%, #4facfe 30%, #f093fb 70%, #f5576c 100%)',
-                     }}></div>
-
                 {/* Circuit Grid Background inside panel */}
-                <div className="absolute inset-0 z-0 opacity-[0.05]"
-                     style={{
-                        backgroundImage: 'linear-gradient(rgba(255,255,255,1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,1) 1px, transparent 1px)',
-                        backgroundSize: '20px 20px'
-                     }}></div>
+                <div style={{
+                   position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+                   opacity: 0.1,
+                   pointerEvents: 'none',
+                   backgroundImage: 'linear-gradient(rgba(255,255,255,1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,1) 1px, transparent 1px)',
+                   backgroundSize: '20px 20px'
+                }}></div>
 
                 {/* Corner Tech Brackets */}
-                <div className="absolute top-0 left-0 w-16 h-16 border-t-[4px] border-l-[4px] border-[#00f2fe] rounded-tl-[22px] shadow-[0_0_15px_#00f2fe] z-20 pointer-events-none"></div>
-                <div className="absolute top-0 right-0 w-16 h-16 border-t-[4px] border-r-[4px] border-[#f5576c] rounded-tr-[22px] shadow-[0_0_15px_#f5576c] z-20 pointer-events-none"></div>
-                <div className="absolute bottom-0 left-0 w-16 h-16 border-b-[4px] border-l-[4px] border-[#00f2fe] rounded-bl-[22px] shadow-[0_0_15px_#00f2fe] z-20 pointer-events-none"></div>
-                <div className="absolute bottom-0 right-0 w-16 h-16 border-b-[4px] border-r-[4px] border-[#f5576c] rounded-br-[22px] shadow-[0_0_15px_#f5576c] z-20 pointer-events-none"></div>
+                <div style={{ position: 'absolute', top: 0, left: 0, width: '64px', height: '64px', borderTop: '4px solid #00f2fe', borderLeft: '4px solid #00f2fe', borderTopLeftRadius: '22px', boxShadow: 'inset 4px 4px 10px rgba(0,242,254,0.3)', pointerEvents: 'none' }}></div>
+                <div style={{ position: 'absolute', top: 0, right: 0, width: '64px', height: '64px', borderTop: '4px solid #f5576c', borderRight: '4px solid #f5576c', borderTopRightRadius: '22px', boxShadow: 'inset -4px 4px 10px rgba(245,87,108,0.3)', pointerEvents: 'none' }}></div>
+                <div style={{ position: 'absolute', bottom: 0, left: 0, width: '64px', height: '64px', borderBottom: '4px solid #00f2fe', borderLeft: '4px solid #00f2fe', borderBottomLeftRadius: '22px', boxShadow: 'inset 4px -4px 10px rgba(0,242,254,0.3)', pointerEvents: 'none' }}></div>
+                <div style={{ position: 'absolute', bottom: 0, right: 0, width: '64px', height: '64px', borderBottom: '4px solid #f5576c', borderRight: '4px solid #f5576c', borderBottomRightRadius: '22px', boxShadow: 'inset -4px -4px 10px rgba(245,87,108,0.3)', pointerEvents: 'none' }}></div>
                 
                 {/* Subtle side glowing overlays */}
-                <div className="absolute top-1/4 bottom-1/4 left-0 w-px bg-[#00f2fe] shadow-[0_0_10px_2px_#00f2fe]"></div>
-                <div className="absolute top-1/4 bottom-1/4 right-0 w-px bg-[#f5576c] shadow-[0_0_10px_2px_#f5576c]"></div>
+                <div style={{ position: 'absolute', top: '25%', bottom: '25%', left: 0, width: '2px', backgroundColor: '#00f2fe', boxShadow: '0 0 15px 2px #00f2fe' }}></div>
+                <div style={{ position: 'absolute', top: '25%', bottom: '25%', right: 0, width: '2px', backgroundColor: '#f5576c', boxShadow: '0 0 15px 2px #f5576c' }}></div>
 
-                <div className="relative z-10 px-8 py-12 space-y-6">
-                   <div className="relative group">
-                     <div className="absolute left-4 top-1/2 -translate-y-1/2 text-cyan-200/50 group-focus-within:text-[#00f2fe] transition-colors pointer-events-none z-10">
+                <div style={{ position: 'relative', zIndex: 10, display: 'flex', flexDirection: 'column', gap: '24px' }}>
+                   
+                   <div style={{ position: 'relative' }}>
+                     <div style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: 'rgba(0, 242, 254, 0.7)', pointerEvents: 'none', zIndex: 10 }}>
                         <User size={20} strokeWidth={2} />
                      </div>
                      <input 
-                       className="w-full bg-[#181b2b]/60 p-4 pl-12 rounded-xl border border-white/10 outline-none focus:border-[#00f2fe]/50 focus:bg-[#181b2b] focus:shadow-[0_0_15px_rgba(0,242,254,0.2)] transition-all text-white placeholder:text-gray-400 text-[15px]" 
+                       style={{
+                         width: '100%', backgroundColor: 'rgba(24, 27, 43, 0.8)', padding: '16px 16px 16px 48px',
+                         borderRadius: '12px', border: '1px solid rgba(255,255,255,0.1)', outline: 'none',
+                         color: 'white', fontSize: '15px', backdropFilter: 'blur(5px)',
+                         boxShadow: 'inset 0 2px 10px rgba(0,0,0,0.5)', transition: 'all 0.3s ease',
+                         boxSizing: 'border-box'
+                       }}
+                       onFocus={(e) => { e.currentTarget.style.border = '1px solid rgba(0, 242, 254, 0.5)'; e.currentTarget.style.boxShadow = '0 0 15px rgba(0,242,254,0.2), inset 0 2px 10px rgba(0,0,0,0.5)'; }}
+                       onBlur={(e) => { e.currentTarget.style.border = '1px solid rgba(255,255,255,0.1)'; e.currentTarget.style.boxShadow = 'inset 0 2px 10px rgba(0,0,0,0.5)'; }}
                        placeholder="Nombre de Usuario..." 
                        onChange={e => setUser({...user, username: e.target.value})} 
                      />
                    </div>
 
-                   <div className="relative group">
-                     <div className="absolute left-4 top-1/2 -translate-y-1/2 text-cyan-200/50 group-focus-within:text-[#00f2fe] transition-colors pointer-events-none z-10">
+                   <div style={{ position: 'relative' }}>
+                     <div style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: 'rgba(0, 242, 254, 0.7)', pointerEvents: 'none', zIndex: 10 }}>
                         <Lock size={20} strokeWidth={2} />
                      </div>
                      <input 
-                       className="w-full bg-[#181b2b]/60 p-4 pl-12 pr-12 rounded-xl border border-white/10 outline-none focus:border-[#00f2fe]/50 focus:bg-[#181b2b] focus:shadow-[0_0_15px_rgba(0,242,254,0.2)] transition-all text-white placeholder:text-gray-400 text-[15px]" 
+                       style={{
+                         width: '100%', backgroundColor: 'rgba(24, 27, 43, 0.8)', padding: '16px 48px 16px 48px',
+                         borderRadius: '12px', border: '1px solid rgba(255,255,255,0.1)', outline: 'none',
+                         color: 'white', fontSize: '15px', backdropFilter: 'blur(5px)',
+                         boxShadow: 'inset 0 2px 10px rgba(0,0,0,0.5)', transition: 'all 0.3s ease',
+                         boxSizing: 'border-box'
+                       }}
                        type="password" 
+                       onFocus={(e) => { e.currentTarget.style.border = '1px solid rgba(0, 242, 254, 0.5)'; e.currentTarget.style.boxShadow = '0 0 15px rgba(0,242,254,0.2), inset 0 2px 10px rgba(0,0,0,0.5)'; }}
+                       onBlur={(e) => { e.currentTarget.style.border = '1px solid rgba(255,255,255,0.1)'; e.currentTarget.style.boxShadow = 'inset 0 2px 10px rgba(0,0,0,0.5)'; }}
                        placeholder="Contraseña..." 
                        onChange={e => setUser({...user, password: e.target.value})} 
                        onKeyDown={(e) => e.key === 'Enter' && handleLogin()}
                      />
-                     <button className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-white transition-colors">
+                     <button style={{ position: 'absolute', right: '16px', top: '50%', transform: 'translateY(-50%)', color: '#9ca3af', background: 'transparent', border: 'none', cursor: 'pointer' }} onMouseOver={e => e.currentTarget.style.color='white'} onMouseOut={e => e.currentTarget.style.color='#9ca3af'}>
                         <EyeOff size={20} strokeWidth={2} />
                      </button>
                    </div>
 
-                   <div className="flex justify-end pt-1">
-                      <a href="#" className="text-[14px] text-gray-300 hover:text-[#00f2fe] underline decoration-gray-500 hover:decoration-[#00f2fe] underline-offset-4 transition-colors">¿Olvidaste tu contraseña?</a>
+                   <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '-8px' }}>
+                      <a href="#" style={{ fontSize: '14px', color: '#d1d5db', textDecoration: 'underline', textUnderlineOffset: '4px', textDecorationColor: '#6b7280' }} onMouseOver={e => { e.currentTarget.style.color='#00f2fe'; e.currentTarget.style.textDecorationColor='#00f2fe'; }} onMouseOut={e => { e.currentTarget.style.color='#d1d5db'; e.currentTarget.style.textDecorationColor='#6b7280'; }}>¿Olvidaste tu contraseña?</a>
                    </div>
 
                    <button 
                      onClick={handleLogin} 
-                     className="w-full mt-4 bg-gradient-to-r from-[#00f2fe] to-[#f5576c] text-white py-4 rounded-xl font-bold tracking-wide hover:shadow-[0_0_30px_rgba(0,242,254,0.4)] transition-all duration-300 text-[16px] shadow-[0_0_15px_rgba(245,87,108,0.3)] border border-white/20 relative overflow-hidden group"
+                     style={{
+                       width: '100%', marginTop: '16px', padding: '16px', borderRadius: '12px',
+                       fontWeight: 'bold', fontSize: '16px', color: 'white', letterSpacing: '1px',
+                       background: 'linear-gradient(90deg, #00f2fe 0%, #f5576c 100%)',
+                       border: '1px solid rgba(255,255,255,0.2)', cursor: 'pointer',
+                       boxShadow: '0 0 20px rgba(245, 87, 108, 0.4)', transition: 'all 0.3s ease',
+                       position: 'relative', overflow: 'hidden'
+                     }}
+                     onMouseOver={(e) => { e.currentTarget.style.boxShadow = '0 0 35px rgba(0, 242, 254, 0.6)'; }}
+                     onMouseOut={(e) => { e.currentTarget.style.boxShadow = '0 0 20px rgba(245, 87, 108, 0.4)'; }}
                    >
-                     <div className="absolute inset-0 bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                     <span className="relative z-10 text-white drop-shadow-md">ENTRAR AL CHAT</span>
+                     ENTRAR AL CHAT
                    </button>
 
-                   <div className="text-center pt-2">
-                      <a href="#" className="text-[14px] text-gray-300 hover:text-white underline decoration-gray-500 hover:decoration-white underline-offset-4 transition-colors">Crear nueva cuenta</a>
+                   <div style={{ textAlign: 'center', marginTop: '12px' }}>
+                      <a href="#" style={{ fontSize: '14px', color: '#d1d5db', textDecoration: 'underline', textUnderlineOffset: '4px', textDecorationColor: '#6b7280' }} onMouseOver={e => { e.currentTarget.style.color='white'; e.currentTarget.style.textDecorationColor='white'; }} onMouseOut={e => { e.currentTarget.style.color='#d1d5db'; e.currentTarget.style.textDecorationColor='#6b7280'; }}>Crear nueva cuenta</a>
                    </div>
                 </div>
              </div>
           </div>
           
           {/* Glass Reflection Under Container */}
-          <div className="relative mt-2 h-20 overflow-hidden mx-8 opacity-40">
-             <div className="w-full h-full border-t-2 border-[#00f2fe] rounded-[24px] rounded-b-none absolute top-[-10px] transform scale-y-[-1]" 
-                  style={{ maskImage: 'linear-gradient(to bottom, black, transparent)', WebkitMaskImage: 'linear-gradient(to bottom, black, transparent)', background: 'linear-gradient(90deg, #00f2fe 0%, #f5576c 100%)', filter: 'blur(2px)' }}></div>
+          <div style={{ position: 'relative', marginTop: '8px', height: '80px', overflow: 'hidden', margin: '8px 32px 0 32px', opacity: 0.4 }}>
+             <div style={{
+               width: '100%', height: '100%', borderTop: '2px solid #00f2fe', borderRadius: '24px 24px 0 0',
+               position: 'absolute', top: '-10px', transform: 'scaleY(-1)',
+               maskImage: 'linear-gradient(to bottom, black, transparent)', WebkitMaskImage: 'linear-gradient(to bottom, black, transparent)',
+               background: 'linear-gradient(90deg, #00f2fe 0%, #f5576c 100%)', filter: 'blur(3px)'
+             }}></div>
           </div>
         </div>
       </div>
