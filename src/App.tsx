@@ -6,6 +6,7 @@ import {
   Search, MoreVertical, MessageSquare
 } from 'lucide-react';
 import { socket } from './socket';
+import { FuturisticCanvas } from './components/FuturisticCanvas';
 
 export default function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -157,6 +158,7 @@ export default function App() {
   if (!isLoggedIn) {
     return (
       <div className="h-[100dvh] relative flex items-center justify-center p-6 bg-gray-900 overflow-hidden">
+        <FuturisticCanvas />
         {/* Colorful gradient background decoration */}
         <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-purple-600/30 blur-[120px] rounded-full pointer-events-none" />
         <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-pink-600/30 blur-[120px] rounded-full pointer-events-none" />
@@ -197,6 +199,7 @@ export default function App() {
 
   return (
     <div className="h-[100dvh] bg-gray-950 text-white flex flex-col font-sans overflow-hidden relative">
+      <FuturisticCanvas />
       {/* Background ambient light */}
       <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[40%] bg-purple-900/10 blur-[120px] rounded-full pointer-events-none" />
       <div className="absolute bottom-[-20%] right-[-10%] w-[50%] h-[40%] bg-blue-900/10 blur-[120px] rounded-full pointer-events-none" />
