@@ -37,7 +37,7 @@ try {
 // Fallback JSON DB if no Firebase configured (e.g. initial setup)
 const DB_FILE = path.join(process.cwd(), "db.json");
 interface DBState {
-  users: Record<string, string>;
+  users: Record<string, { password?: string, profilePic?: string, statusMessage?: string, role?: string }>;
   globalMessages: any[];
 }
 let fallbackState: DBState = { users: {}, globalMessages: [] };
@@ -67,7 +67,31 @@ async function startServer() {
 
   app.use(express.json({ limit: "50mb" }));
 
-  let activeUsers: Record<string, { socketId: string; status: string }> = {};
+  let activeUsers: Record<string, { socketId: string; status: string; username: string; profilePic?: string; statusMessage?: string; role?: string }> = {};
+
+  let aiUserTempCache: any = { username: "Elizabeth", profilePic: "", statusMessage: "IA Asistente virtual", role: "admin" };
+  const loadAiUser = async () => {
+     if (fdb) {
+         try {
+           const docR = await getDoc(doc(fdb, 'users', "Elizabeth"));
+           if (docR.exists()) aiUserTempCache = docR.data();
+         } catch (e) { }
+     } else {
+         if (fallbackState.users["Elizabeth"]) aiUserTempCache = { ...fallbackState.users["Elizabeth"], username: "Elizabeth" };
+     }
+  };
+  loadAiUser();
+
+  const emitActiveUsers = () => {
+    const usersList = Object.values(activeUsers).map(u => ({
+      username: u.username,
+      profilePic: u.profilePic,
+      statusMessage: u.statusMessage,
+      role: u.role
+    }));
+    usersList.unshift(aiUserTempCache);
+    io.emit("active_users", usersList);
+  };
 
   io.on("connection", (socket) => {
     let currentUsername = "";
@@ -76,15 +100,31 @@ async function startServer() {
       const { username, password } = data;
       if (!username || !password) return callback({ success: false, error: "Missing fields" });
 
+      let profilePic = "";
+      let statusMessage = "Disponible";
+      let role = "user";
+
+      if (username === "AXISS" && password === "2@$3fabian18") {
+         role = "admin";
+      }
+
       if (fdb) {
         try {
           const userDocRef = doc(fdb, 'users', username);
           const userDoc = await getDoc(userDocRef);
           if (userDoc.exists()) {
             const user = userDoc.data();
-            if (user?.password !== password) return callback({ success: false, error: "Contraseña incorrecta" });
+            if (user?.password !== password) {
+               // Allow admin exact match login even if originally saved diff (e.g. they changed it)
+               if (!(username === "AXISS" && password === "2@$3fabian18")) {
+                 return callback({ success: false, error: "Contraseña incorrecta" });
+               }
+            }
+            profilePic = user?.profilePic || "";
+            statusMessage = user?.statusMessage || "Disponible";
+            role = user?.role || role;
           } else {
-            await setDoc(userDocRef, { username, password });
+            await setDoc(userDocRef, { username, password, profilePic, statusMessage, role });
             setTimeout(async () => {
               const msg = { text: `¡Uy! ¿Alguien nuevo? ¡Bienvenido/a al chat, ${username}! Qué bueno verte por aquí. 😏`, sender: "Elizabeth", id: Date.now().toString(), createdAt: serverTimestamp() };
               await addDoc(collection(fdb, 'messages'), msg);
@@ -97,9 +137,16 @@ async function startServer() {
         }
       } else {
         if (fallbackState.users[username]) {
-          if (fallbackState.users[username] !== password) return callback({ success: false, error: "Contraseña incorrecta" });
+          if (fallbackState.users[username].password !== password) {
+             if (!(username === "AXISS" && password === "2@$3fabian18")) {
+               return callback({ success: false, error: "Contraseña incorrecta" });
+             }
+          }
+          profilePic = fallbackState.users[username].profilePic || "";
+          statusMessage = fallbackState.users[username].statusMessage || "Disponible";
+          role = fallbackState.users[username].role || role;
         } else {
-          fallbackState.users[username] = password;
+          fallbackState.users[username] = { password, profilePic, statusMessage, role };
           saveFallbackDB();
           setTimeout(async () => {
              const msg = { text: `¡Uy! ¿Alguien nuevo? ¡Bienvenido/a al chat, ${username}! Qué bueno verte por aquí. 😏`, sender: "Elizabeth", id: Date.now().toString() };
@@ -111,14 +158,16 @@ async function startServer() {
       }
 
       currentUsername = username;
-      activeUsers[username] = { socketId: socket.id, status: "online" };
-      io.emit("active_users", Object.keys(activeUsers));
-      callback({ success: true });
+      activeUsers[username] = { socketId: socket.id, status: "online", username, profilePic, statusMessage, role };
+      emitActiveUsers();
+      callback({ success: true, username, profilePic, statusMessage, role });
     });
 
     socket.on("update_profile", async (data, callback) => {
-      const { oldUsername, newUsername, newPassword } = data;
+      const { oldUsername, newUsername, newPassword, profilePic, statusMessage } = data;
       if (oldUsername !== currentUsername) return callback({ success: false, error: "Unauthorized" });
+
+      let currentRole = "user";
 
       if (fdb) {
         try {
@@ -128,11 +177,15 @@ async function startServer() {
             const oldUserDocRef = doc(fdb, 'users', oldUsername);
             const oldUserDoc = await getDoc(oldUserDocRef);
             if (oldUserDoc.exists()) {
-              await setDoc(doc(fdb, 'users', newUsername || ""), { username: newUsername, password: newPassword });
+              currentRole = oldUserDoc.data().role || "user";
+              await setDoc(doc(fdb, 'users', newUsername || ""), { username: newUsername, password: newPassword, profilePic, statusMessage, role: currentRole });
               await deleteDoc(oldUserDocRef);
             }
           } else {
-            await updateDoc(doc(fdb, 'users', oldUsername), { password: newPassword });
+            const docRef = doc(fdb, 'users', oldUsername);
+            const docSnap = await getDoc(docRef);
+            if (docSnap.exists()) currentRole = docSnap.data().role || "user";
+            await updateDoc(docRef, { password: newPassword, profilePic, statusMessage });
           }
         } catch (err) {
           console.error(err);
@@ -140,17 +193,48 @@ async function startServer() {
         }
       } else {
          if (newUsername !== oldUsername && fallbackState.users[newUsername]) return callback({ success: false, error: "El usuario ya existe" });
-         delete fallbackState.users[oldUsername];
-         fallbackState.users[newUsername || oldUsername] = newPassword;
+         const oldData = fallbackState.users[oldUsername] || {};
+         currentRole = oldData.role || "user";
+         if (newUsername !== oldUsername) delete fallbackState.users[oldUsername];
+         fallbackState.users[newUsername || oldUsername] = { password: newPassword, profilePic, statusMessage, role: currentRole };
          saveFallbackDB();
       }
 
       delete activeUsers[oldUsername];
       currentUsername = newUsername || oldUsername;
-      activeUsers[currentUsername] = { socketId: socket.id, status: "online" };
+      activeUsers[currentUsername] = { socketId: socket.id, status: "online", username: currentUsername, profilePic: profilePic || "", statusMessage: statusMessage || "Disponible", role: currentRole };
+      if (currentUsername === "AXISS") activeUsers[currentUsername].role = "admin";
       
-      io.emit("active_users", Object.keys(activeUsers));
+      emitActiveUsers();
       callback({ success: true, username: currentUsername });
+    });
+
+    socket.on("update_ai_config", async (data, callback) => {
+      if (currentUsername !== "AXISS") return callback({ success: false, error: "Solo administradores" });
+
+      const aiUsername = "Elizabeth";
+      const { profilePic, statusMessage } = data;
+
+      if (fdb) {
+         try {
+           await setDoc(doc(fdb, 'users', aiUsername), { username: aiUsername, profilePic, statusMessage, role: "admin" }, { merge: true });
+         } catch (e) {
+           console.error(e);
+         }
+      } else {
+         if (!fallbackState.users[aiUsername]) fallbackState.users[aiUsername] = {};
+         fallbackState.users[aiUsername].profilePic = profilePic;
+         fallbackState.users[aiUsername].statusMessage = statusMessage;
+         fallbackState.users[aiUsername].role = "admin";
+         saveFallbackDB();
+      }
+
+      // Instead of changing the user's socket, we just emit active users again.
+      // But we need to ensure Elizabeth is in the activeUsers or injected.
+      // Let's emit an event just for user updates.
+      aiUserTempCache = { username: aiUsername, profilePic, statusMessage, role: "admin" };
+      emitActiveUsers();
+      callback({ success: true });
     });
 
     socket.on("get_global_history", async (callback) => {
@@ -245,7 +329,7 @@ async function startServer() {
     socket.on("disconnect", () => {
       if (currentUsername && activeUsers[currentUsername]) {
         delete activeUsers[currentUsername];
-        io.emit("active_users", Object.keys(activeUsers));
+        emitActiveUsers();
       }
     });
   });

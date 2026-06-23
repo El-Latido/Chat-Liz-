@@ -35,17 +35,27 @@ class ErrorBoundary extends React.Component<any, any> {
   }
 }
 
+interface UserObj {
+  username: string;
+  profilePic?: string;
+  statusMessage?: string;
+  role?: string;
+}
+
 function MainApp() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [user, setUser] = useState({ username: '', password: '' });
+  const [user, setUser] = useState<UserObj & {password?: string}>({ username: '', password: '' });
   const [isConfigOpen, setIsConfigOpen] = useState(false);
-  const [profileForm, setProfileForm] = useState({ username: '', password: '' });
+  const [profileForm, setProfileForm] = useState<UserObj & {password?: string}>({ username: '', password: '', profilePic: '', statusMessage: 'Disponible' });
+  const [selectedUserModal, setSelectedUserModal] = useState<UserObj | null>(null);
+  const [adminConfigLizOpen, setAdminConfigLizOpen] = useState(false);
+  const [aiProfileForm, setAiProfileForm] = useState({ profilePic: '', statusMessage: 'IA Asistente virtual' });
   
   const [activeChat, setActiveChat] = useState('global');
   const [messages, setMessages] = useState<any[]>([]);
   const [inputValue, setInputValue] = useState('');
   
-  const [usersOnline, setUsersOnline] = useState<string[]>(['Elizabeth']); 
+  const [usersOnline, setUsersOnline] = useState<UserObj[]>([{ username: 'Elizabeth', statusMessage: 'IA Asistente virtual', role: 'admin' }]); 
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
@@ -63,6 +73,8 @@ function MainApp() {
     
     socket.emit('register_or_login', user, (res: any) => {
       if (res.success) {
+        setUser({ ...user, profilePic: res.profilePic, statusMessage: res.statusMessage, role: res.role });
+        setProfileForm({ ...profileForm, username: res.username, profilePic: res.profilePic, statusMessage: res.statusMessage });
         setIsLoggedIn(true);
       } else {
         alert(res.error || 'Error al iniciar sesión');
@@ -96,9 +108,10 @@ function MainApp() {
       }
     });
 
-    socket.on('active_users', (users: string[]) => {
-      const cleaned = users.filter((u: string) => u !== 'Elizabeth' && u !== user.username);
-      cleaned.unshift('Elizabeth'); 
+    socket.on('active_users', (usersList: UserObj[]) => {
+      const cleaned = usersList.filter(u => u.username !== 'Elizabeth' && u.username !== user.username);
+      const elizabeth = usersList.find(u => u.username === 'Elizabeth') || { username: 'Elizabeth', statusMessage: 'IA Asistente virtual', role: 'admin' };
+      cleaned.unshift(elizabeth); 
       setUsersOnline(cleaned);
     });
 
@@ -349,10 +362,14 @@ function MainApp() {
 
               {/* Elizabeth Profile Area (Sidebar header) */}
               <div className="flex flex-col items-center pt-10 pb-6 relative z-10">
-                 <div className="relative mb-6 group cursor-pointer" onClick={() => setActiveChat('Elizabeth')}>
+                 <div className="relative mb-6 group cursor-pointer" onClick={() => setSelectedUserModal(usersOnline.find(u => u.username === 'Elizabeth') || {username: 'Elizabeth', statusMessage: 'IA Asistente virtual', role: 'admin'})}>
                     <div className="absolute inset-0 bg-cyan-400 blur-2xl opacity-20 rounded-full group-hover:opacity-40 transition-opacity"></div>
                     <div className="w-28 h-28 rounded-full border border-cyan-400/50 p-1 relative z-10 bg-[#0a0a16] shadow-[0_0_20px_rgba(6,182,212,0.3)] flex items-center justify-center overflow-hidden">
-                       <Bot size={54} className="text-cyan-300 drop-shadow-[0_0_10px_rgba(6,182,212,0.8)]" />
+                       {(usersOnline.find(u => u.username === 'Elizabeth')?.profilePic) ? (
+                         <img src={usersOnline.find(u => u.username === 'Elizabeth')?.profilePic} className="w-full h-full object-cover rounded-full" alt="Elizabeth" />
+                       ) : (
+                         <Bot size={54} className="text-cyan-300 drop-shadow-[0_0_10px_rgba(6,182,212,0.8)]" />
+                       )}
                     </div>
                     {/* Glowing dot for online status */}
                     <div className="absolute bottom-2 right-2 w-4 h-4 bg-cyan-400 rounded-full border-2 border-[#12141c] shadow-[0_0_8px_rgba(6,182,212,0.8)]"></div>
@@ -366,8 +383,12 @@ function MainApp() {
                        style={ (activeChat === 'Elizabeth' || activeChat === 'global') ? { background: 'linear-gradient(#1a1c26, #1a1c26) padding-box, linear-gradient(to right, #06b6d4, #a855f7) border-box', border: '1px solid transparent' } : {} }
                     >
                         <div className="flex items-center gap-3">
-                           <div className="w-8 h-8 rounded-full bg-cyan-900/50 border border-cyan-500/50 flex items-center justify-center">
-                              <Bot size={16} className="text-cyan-300" />
+                           <div className="w-8 h-8 rounded-full bg-cyan-900/50 border border-cyan-500/50 flex items-center justify-center overflow-hidden">
+                              {(usersOnline.find(u => u.username === 'Elizabeth')?.profilePic) ? (
+                                <img src={usersOnline.find(u => u.username === 'Elizabeth')?.profilePic} className="w-full h-full object-cover" />
+                              ) : (
+                                <Bot size={16} className="text-cyan-300" />
+                              )}
                            </div>
                            <div className="flex flex-col items-start leading-tight">
                               <span className="font-bold text-white text-[15px]">ELIZABETH (IA) <span className="text-cyan-400 font-normal">~</span></span>
@@ -383,21 +404,23 @@ function MainApp() {
               {/* Users List */}
               <div className="flex-1 overflow-y-auto px-4 py-2 space-y-2 scrollbar-thin">
                  {usersOnline.map(u => {
-                    if (u === 'Elizabeth') return null;
+                    if (u.username === 'Elizabeth') return null;
                     return (
-                        <button
-                           key={u}
-                           onClick={() => setActiveChat(u)}
-                           className={`w-full flex items-center justify-between px-3 py-2.5 rounded-2xl transition-all ${activeChat === u ? 'bg-white/10' : 'hover:bg-white/5'}`}
-                        >
-                           <div className="flex items-center gap-3">
-                               <div className="w-10 h-10 rounded-full bg-gradient-to-br from-gray-700 to-gray-800 border border-white/10 flex items-center justify-center overflow-hidden">
-                                   <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${u}`} alt="avatar" className="w-full h-full object-cover" />
+                        <div key={u.username} className={`w-full flex items-center justify-between px-3 py-2.5 rounded-2xl transition-all ${activeChat === u.username ? 'bg-white/10' : 'hover:bg-white/5'}`}>
+                           <div className="flex items-center gap-3 flex-1 overflow-hidden">
+                               <div 
+                                 title="Ver perfil"
+                                 className="w-10 h-10 rounded-full bg-gradient-to-br from-gray-700 to-gray-800 border border-white/10 flex items-center justify-center overflow-hidden cursor-pointer flex-shrink-0"
+                                 onClick={() => setSelectedUserModal(u)}
+                               >
+                                   <img src={u.profilePic || `https://api.dicebear.com/7.x/avataaars/svg?seed=${u.username}`} alt="avatar" className="w-full h-full object-cover" />
                                </div>
-                               <span className="font-medium text-gray-300 text-[15px]">{u} <span className="text-gray-500">~</span></span>
+                               <button className="text-left flex-1 truncate" onClick={() => setActiveChat(u.username)}>
+                                 <span className="font-medium text-gray-300 text-[15px] truncate block">{u.username} <span className="text-gray-500">~</span></span>
+                               </button>
                            </div>
-                           <div className="w-2.5 h-2.5 bg-green-500 rounded-full shadow-[0_0_8px_rgba(34,197,94,0.6)]"></div>
-                        </button>
+                           <div className="w-2.5 h-2.5 bg-green-500 rounded-full shadow-[0_0_8px_rgba(34,197,94,0.6)] flex-shrink-0"></div>
+                        </div>
                     )
                  })}
               </div>
@@ -417,7 +440,7 @@ function MainApp() {
                      </button>
                      <h2 className="text-[16px] md:text-lg font-bold text-white flex items-center gap-2">
                         {activeChat === 'global' ? 'CHAT GLOBAL #1 - Chat-Liz' : (activeChat === 'Elizabeth' ? 'Private Chat: Elizabeth' : `Private Chat: ${activeChat}`)}
-                        {activeChat === 'global' && <span className="text-sm font-normal text-gray-500 ml-1">({usersOnline.length + 15430} usuarios online)</span>}
+                        {activeChat === 'global' && <span className="text-sm font-normal text-gray-500 ml-1">({usersOnline.length} usuarios online)</span>}
                      </h2>
                   </div>
                   {activeChat === 'global' && (
@@ -509,7 +532,7 @@ function MainApp() {
       {/* Config Modal */}
       {isConfigOpen && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-[#12141c] p-8 rounded-3xl w-full max-w-md shadow-2xl relative border border-white/10">
+          <div className="bg-[#12141c] p-6 lg:p-8 rounded-3xl w-full max-w-md shadow-2xl relative border border-white/10 max-h-[90vh] overflow-y-auto scrollbar-thin">
             <button onClick={() => setIsConfigOpen(false)} className="absolute top-4 right-4 text-gray-400 hover:text-white bg-white/5 hover:bg-white/10 p-2 rounded-full transition-colors">
                <X size={20} />
             </button>
@@ -517,9 +540,24 @@ function MainApp() {
                <Settings size={22} className="text-cyan-400" />
                Ajustes de Perfil
             </h2>
-            <div className="space-y-5">
+            <div className="space-y-4">
+              <div className="flex flex-col items-center mb-4">
+                <div className="w-24 h-24 rounded-full border-2 border-dashed border-gray-600 flex items-center justify-center overflow-hidden bg-black/30 relative">
+                   <img src={profileForm.profilePic || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.username}`} alt="avatar" className="w-full h-full object-cover" />
+                   <input type="file" title="Subir foto de perfil" className="absolute inset-0 opacity-0 cursor-pointer" accept="image/*" onChange={e => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        const reader = new FileReader();
+                        reader.onload = () => setProfileForm({...profileForm, profilePic: reader.result as string});
+                        reader.readAsDataURL(file);
+                      }
+                   }} />
+                </div>
+                <span className="text-xs text-gray-500 mt-2">Haz clic para cambiar foto</span>
+              </div>
+              
               <div className="space-y-2">
-                <label className="text-sm font-semibold text-gray-400">Username</label>
+                <label className="text-sm font-semibold text-gray-400">Usuario</label>
                 <input 
                    disabled
                    value={profileForm.username}
@@ -527,7 +565,18 @@ function MainApp() {
                 />
               </div>
               <div className="space-y-2">
-                <label className="text-sm font-semibold text-gray-400">Cambiar Contraseña</label>
+                <label className="text-sm font-semibold text-gray-400">Estado / Comentario</label>
+                <input 
+                   value={profileForm.statusMessage || ''}
+                   onChange={e => setProfileForm({...profileForm, statusMessage: e.target.value})}
+                   maxLength={60}
+                   placeholder="Ej: Hola a todos!"
+                   type="text"
+                   className="w-full bg-[#0a0a16] p-3 rounded-xl border border-white/10 outline-none focus:border-cyan-500 transition-all text-white" 
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-semibold text-gray-400">Contraseña</label>
                 <input 
                    value={profileForm.password}
                    onChange={e => setProfileForm({...profileForm, password: e.target.value})}
@@ -535,12 +584,23 @@ function MainApp() {
                    className="w-full bg-[#0a0a16] p-3 rounded-xl border border-white/10 outline-none focus:border-cyan-500 focus:shadow-[0_0_15px_rgba(6,182,212,0.2)] transition-all text-white" 
                 />
               </div>
+              
+              {user.role === 'admin' && (
+                 <button onClick={() => { 
+                    const aiUser = usersOnline.find(u => u.username === 'Elizabeth');
+                    setAiProfileForm({ profilePic: aiUser?.profilePic || '', statusMessage: aiUser?.statusMessage || 'IA Asistente virtual' });
+                    setIsConfigOpen(false); 
+                    setAdminConfigLizOpen(true); 
+                 }} className="w-full flex items-center justify-center gap-2 text-fuchsia-400 border border-fuchsia-400 bg-fuchsia-500/10 p-3 rounded-xl font-bold mt-2 hover:bg-fuchsia-500/20 transition-all">
+                    <Bot size={18} /> Configurar a HELIZABETH
+                 </button>
+              )}
+
               <button 
                 onClick={() => {
-                  socket.emit('update_profile', profileForm, (res: any) => {
+                  socket.emit('update_profile', { oldUsername: user.username, newUsername: profileForm.username, newPassword: profileForm.password, profilePic: profileForm.profilePic, statusMessage: profileForm.statusMessage }, (res: any) => {
                     if (res.success) {
-                        setUser({...user, password: profileForm.password});
-                        alert("Actualizado");
+                        setUser({...user, password: profileForm.password, profilePic: profileForm.profilePic, statusMessage: profileForm.statusMessage });
                         setIsConfigOpen(false);
                     } else {
                         alert(res.error);
@@ -562,6 +622,108 @@ function MainApp() {
                   Cerrar Sesión
                 </button>
              </div>
+           </div>
+         </div>
+       )}
+       {/* Admin Config Liz Modal */}
+       {adminConfigLizOpen && (
+         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+           <div className="bg-[#12141c] p-6 lg:p-8 rounded-3xl w-full max-w-md shadow-2xl relative border border-fuchsia-500/20">
+             <button onClick={() => setAdminConfigLizOpen(false)} className="absolute top-4 right-4 text-gray-400 hover:text-white bg-white/5 hover:bg-white/10 p-2 rounded-full transition-colors">
+                <X size={20} />
+             </button>
+             <h2 className="text-xl font-bold text-fuchsia-400 flex items-center gap-2 mb-6">
+                <Bot size={22} />
+                Configurar HELIZABETH
+             </h2>
+             <div className="space-y-4">
+               <p className="text-sm text-gray-400 leading-relaxed mb-4">
+                 Como administrador (AXISS), puedes modificar el perfil de la IA.
+               </p>
+               
+               <div className="flex flex-col items-center mb-4">
+                 <div className="w-24 h-24 rounded-full border-2 border-dashed border-fuchsia-500/50 flex items-center justify-center overflow-hidden bg-black/30 relative">
+                    {aiProfileForm.profilePic ? (
+                       <img src={aiProfileForm.profilePic} alt="avatar" className="w-full h-full object-cover" />
+                    ) : (
+                       <Bot size={40} className="text-fuchsia-400" />
+                    )}
+                    <input type="file" title="Subir foto de perfil IA" className="absolute inset-0 opacity-0 cursor-pointer" accept="image/*" onChange={e => {
+                       const file = e.target.files?.[0];
+                       if (file) {
+                         const reader = new FileReader();
+                         reader.onload = () => setAiProfileForm({...aiProfileForm, profilePic: reader.result as string});
+                         reader.readAsDataURL(file);
+                       }
+                    }} />
+                 </div>
+                 <span className="text-xs text-gray-500 mt-2">Haz clic para cambiar foto</span>
+               </div>
+
+               <div className="space-y-2">
+                 <label className="text-sm font-semibold text-gray-400">Estado / Información</label>
+                 <input 
+                    value={aiProfileForm.statusMessage || ''}
+                    onChange={e => setAiProfileForm({...aiProfileForm, statusMessage: e.target.value})}
+                    maxLength={100}
+                    placeholder="Ej: IA Asistente virtual"
+                    type="text"
+                    className="w-full bg-[#0a0a16] p-3 rounded-xl border border-white/10 outline-none focus:border-fuchsia-500 transition-all text-white" 
+                 />
+               </div>
+
+               <button 
+                 onClick={() => {
+                   socket.emit('update_ai_config', { profilePic: aiProfileForm.profilePic, statusMessage: aiProfileForm.statusMessage }, (res: any) => {
+                       if (res.success) {
+                           alert("Perfil de HELIZABETH actualizado en el servidor.");
+                           setAdminConfigLizOpen(false);
+                       } else {
+                           alert("Error: " + res.error);
+                       }
+                   });
+                 }}
+                 className="w-full mt-4 bg-fuchsia-600 hover:bg-fuchsia-500 text-white p-3 rounded-xl font-bold transition-colors shadow-[0_4px_14px_rgba(217,70,239,0.3)]"
+               >
+                 Aplicar cambios
+               </button>
+             </div>
+           </div>
+         </div>
+       )}
+
+       {/* Selected User Info Modal */}
+       {selectedUserModal && (
+         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setSelectedUserModal(null)}>
+           <div className="bg-[#12141c] p-8 rounded-3xl w-full max-w-sm shadow-2xl relative border border-white/10 text-center" onClick={e => e.stopPropagation()}>
+             <button onClick={() => setSelectedUserModal(null)} className="absolute top-4 right-4 text-gray-400 hover:text-white bg-white/5 hover:bg-white/10 p-2 rounded-full transition-colors">
+                <X size={20} />
+             </button>
+             <div className="w-24 h-24 mx-auto mb-4 rounded-full border border-white/10 overflow-hidden shadow-lg">
+                <img src={selectedUserModal.profilePic || `https://api.dicebear.com/7.x/avataaars/svg?seed=${selectedUserModal.username}`} className="w-full h-full object-cover" alt="Avatar" />
+             </div>
+             <h3 className="text-xl font-bold text-white mb-1 flex items-center justify-center gap-2">
+                {selectedUserModal.username}
+                {selectedUserModal.role === 'admin' && <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-fuchsia-500/20 text-fuchsia-400 border border-fuchsia-500/30">Admin</span>}
+             </h3>
+             <p className="text-cyan-400 text-sm mb-4">Online</p>
+             
+             <div className="bg-[#0a0a16] border border-white/5 p-4 rounded-2xl relative">
+                <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-[#12141c] px-2 text-xs text-gray-500 font-semibold uppercase">Estado</div>
+                <p className="text-gray-300 italic text-sm">
+                   "{selectedUserModal.statusMessage || 'Disponible'}"
+                </p>
+             </div>
+             
+             {selectedUserModal.username !== user.username && (
+               <button 
+                 onClick={() => { setActiveChat(selectedUserModal.username); setSelectedUserModal(null); }}
+                 className="w-full mt-6 flex items-center justify-center gap-2 text-white bg-white/5 hover:bg-white/10 p-3 rounded-xl font-medium transition-colors border border-white/10"
+               >
+                 <MessageCircle size={18} />
+                 Enviar mensaje privado
+               </button>
+             )}
            </div>
          </div>
        )}
