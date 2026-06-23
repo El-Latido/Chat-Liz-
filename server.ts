@@ -63,7 +63,10 @@ async function startServer() {
   const PORT = parseInt(process.env.PORT as string, 10) || 3000;
 
   const server = http.createServer(app);
-  const io = new Server(server, { cors: { origin: "*" } });
+  const io = new Server(server, { 
+    cors: { origin: "*" },
+    maxHttpBufferSize: 5e7 // 50MB
+  });
 
   app.use(express.json({ limit: "50mb" }));
 
@@ -172,44 +175,56 @@ async function startServer() {
 
       let currentRole = "user";
 
+      // Sanitize to avoid undefined properties throwing errors in Firebase
+      const safePassword = newPassword || "";
+      const safeProfilePic = profilePic || "";
+      const safeStatusMessage = statusMessage || "Disponible";
+      const safeLanguage = countryLanguage || "es";
+      const safeNewUsername = newUsername || oldUsername;
+
       if (fdb) {
         try {
-          if (newUsername !== oldUsername) {
-            const existsDoc = await getDoc(doc(fdb, 'users', newUsername || ""));
+          if (safeNewUsername !== oldUsername) {
+            const existsDoc = await getDoc(doc(fdb, 'users', safeNewUsername));
             if (existsDoc.exists()) return callback({ success: false, error: "El usuario ya existe" });
             const oldUserDocRef = doc(fdb, 'users', oldUsername);
             const oldUserDoc = await getDoc(oldUserDocRef);
             if (oldUserDoc.exists()) {
               currentRole = oldUserDoc.data().role || "user";
-              await setDoc(doc(fdb, 'users', newUsername || ""), { username: newUsername, password: newPassword, profilePic, statusMessage, role: currentRole, pais_idioma: countryLanguage });
+              await setDoc(doc(fdb, 'users', safeNewUsername), { username: safeNewUsername, password: safePassword, profilePic: safeProfilePic, statusMessage: safeStatusMessage, role: currentRole, pais_idioma: safeLanguage });
               await deleteDoc(oldUserDocRef);
             }
           } else {
             const docRef = doc(fdb, 'users', oldUsername);
             const docSnap = await getDoc(docRef);
-            if (docSnap.exists()) currentRole = docSnap.data().role || "user";
-            await updateDoc(docRef, { password: newPassword, profilePic, statusMessage, pais_idioma: countryLanguage });
+            if (docSnap.exists()) {
+              currentRole = docSnap.data().role || "user";
+              await updateDoc(docRef, { password: safePassword, profilePic: safeProfilePic, statusMessage: safeStatusMessage, pais_idioma: safeLanguage });
+            } else {
+              // Create it if it somehow doesn't exist
+              await setDoc(docRef, { username: oldUsername, password: safePassword, profilePic: safeProfilePic, statusMessage: safeStatusMessage, role: currentRole, pais_idioma: safeLanguage });
+            }
           }
         } catch (err) {
           console.error(err);
           return callback({ success: false, error: "Database error" });
         }
       } else {
-         if (newUsername !== oldUsername && fallbackState.users[newUsername]) return callback({ success: false, error: "El usuario ya existe" });
+         if (safeNewUsername !== oldUsername && fallbackState.users[safeNewUsername]) return callback({ success: false, error: "El usuario ya existe" });
          const oldData = fallbackState.users[oldUsername] || {};
          currentRole = oldData.role || "user";
-         if (newUsername !== oldUsername) delete fallbackState.users[oldUsername];
-         fallbackState.users[newUsername || oldUsername] = { password: newPassword, profilePic, statusMessage, role: currentRole, pais_idioma: countryLanguage };
+         if (safeNewUsername !== oldUsername) delete fallbackState.users[oldUsername];
+         fallbackState.users[safeNewUsername] = { password: safePassword, profilePic: safeProfilePic, statusMessage: safeStatusMessage, role: currentRole, pais_idioma: safeLanguage };
          saveFallbackDB();
       }
 
       delete activeUsers[oldUsername];
-      currentUsername = newUsername || oldUsername;
-      activeUsers[currentUsername] = { socketId: socket.id, status: "online", username: currentUsername, profilePic: profilePic || "", statusMessage: statusMessage || "Disponible", role: currentRole, pais_idioma: countryLanguage };
+      currentUsername = safeNewUsername;
+      activeUsers[currentUsername] = { socketId: socket.id, status: "online", username: currentUsername, profilePic: safeProfilePic, statusMessage: safeStatusMessage, role: currentRole, pais_idioma: safeLanguage };
       if (currentUsername === "AXISS") activeUsers[currentUsername].role = "admin";
       
       emitActiveUsers();
-      callback({ success: true, username: currentUsername });
+      callback({ success: true, username: currentUsername, profilePic: safeProfilePic, statusMessage: safeStatusMessage, countryLanguage: safeLanguage });
     });
 
     socket.on("update_ai_config", async (data, callback) => {
@@ -217,17 +232,19 @@ async function startServer() {
 
       const aiUsername = "Elizabeth";
       const { profilePic, statusMessage } = data;
+      const safeProfilePic = profilePic || "";
+      const safeStatusMessage = statusMessage || "IA Asistente virtual";
 
       if (fdb) {
          try {
-           await setDoc(doc(fdb, 'users', aiUsername), { username: aiUsername, profilePic, statusMessage, role: "admin" }, { merge: true });
+           await setDoc(doc(fdb, 'users', aiUsername), { username: aiUsername, profilePic: safeProfilePic, statusMessage: safeStatusMessage, role: "admin" }, { merge: true });
          } catch (e) {
            console.error(e);
          }
       } else {
          if (!fallbackState.users[aiUsername]) fallbackState.users[aiUsername] = {};
-         fallbackState.users[aiUsername].profilePic = profilePic;
-         fallbackState.users[aiUsername].statusMessage = statusMessage;
+         fallbackState.users[aiUsername].profilePic = safeProfilePic;
+         fallbackState.users[aiUsername].statusMessage = safeStatusMessage;
          fallbackState.users[aiUsername].role = "admin";
          saveFallbackDB();
       }
@@ -235,7 +252,7 @@ async function startServer() {
       // Instead of changing the user's socket, we just emit active users again.
       // But we need to ensure Elizabeth is in the activeUsers or injected.
       // Let's emit an event just for user updates.
-      aiUserTempCache = { username: aiUsername, profilePic, statusMessage, role: "admin" };
+      aiUserTempCache = { username: aiUsername, profilePic: safeProfilePic, statusMessage: safeStatusMessage, role: "admin" };
       emitActiveUsers();
       callback({ success: true });
     });
