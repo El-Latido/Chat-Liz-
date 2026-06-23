@@ -81,18 +81,7 @@ export default function App() {
     };
   }, [isLoggedIn, activeChat, user.username]);
 
-  useEffect(() => {
-    if (isLoggedIn) {
-      if (activeChat === 'global') {
-         socket.emit('get_global_history', (historyMsgs: any[]) => {
-           setMessages(historyMsgs);
-           setTimeout(() => bottomRef.current?.scrollIntoView(), 100);
-         });
-      } else {
-         setMessages([]);
-      }
-    }
-  }, [activeChat, isLoggedIn]);
+
 
   const handleSendMessage = () => {
     if (!inputValue.trim() && !selectedImage && !audioUrl) return;
@@ -158,7 +147,7 @@ export default function App() {
 
   if (!isLoggedIn) {
     return (
-      <div className="h-[100dvh] relative flex items-center justify-center p-6 bg-[#0a0a16] overflow-hidden">
+      <div className="h-screen relative flex items-center justify-center p-6 bg-[#0a0a16] overflow-hidden">
         <FuturisticCanvas />
         <div className="absolute top-[-10%] left-[-10%] w-[60%] h-[60%] bg-purple-700/20 blur-[150px] rounded-full pointer-events-none" />
         <div className="absolute bottom-[-10%] right-[-10%] w-[60%] h-[60%] bg-blue-700/20 blur-[150px] rounded-full pointer-events-none" />
@@ -203,7 +192,7 @@ export default function App() {
   }
 
   return (
-    <div className="h-[100dvh] bg-[#0a0a16] text-white flex overflow-hidden relative font-sans">
+    <div className="h-screen bg-[#0a0a16] text-white flex overflow-hidden relative font-sans">
       <FuturisticCanvas />
       
       {/* Sidebar Overlay (Mobile) */}
@@ -277,7 +266,7 @@ export default function App() {
                   className={`w-full flex items-center gap-4 px-4 py-3 rounded-2xl transition-all group ${activeChat === u ? 'bg-slate-900/50 border border-slate-600 shadow-[0_0_15px_rgba(255,255,255,0.05)]' : 'border border-transparent hover:bg-white/5'}`}
                 >
                   <div className="w-10 h-10 rounded-full bg-gray-800 flex items-center justify-center text-gray-300 border border-white/5 group-hover:border-white/20 font-bold overflow-hidden">
-                     {u.charAt(0).toUpperCase()}
+                     {u && typeof u === 'string' ? u.charAt(0).toUpperCase() : '?'}
                   </div>
                   <span className="font-semibold text-gray-200 flex items-center gap-2">
                      {u} <span className="text-gray-500 font-normal">~</span>
@@ -297,7 +286,7 @@ export default function App() {
         <div className="absolute top-6 right-6 flex items-center gap-4">
            <div className="flex items-center gap-3 bg-[#171821] border border-cyan-500/30 px-3 py-1.5 rounded-full shadow-[0_0_10px_rgba(6,182,212,0.1)]">
               <div className="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center text-sm font-bold border border-white/10">
-                 {user.username.charAt(0).toUpperCase()}
+                 {user && typeof user.username === 'string' && user.username.length > 0 ? user.username.charAt(0).toUpperCase() : '?'}
               </div>
               <span className="font-semibold text-gray-200 pr-2">{user.username}</span>
            </div>
@@ -338,8 +327,8 @@ export default function App() {
 
            {/* Chat Feed */}
            <div className="flex-1 overflow-y-auto p-6 space-y-4 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent">
-              {messages.filter((m, i, arr) => 
-                !(i > 0 && m.sender === 'Elizabeth' && m.text === arr[i-1].text)
+           {messages.filter((m, i, arr) => 
+                m && m.sender && !(i > 0 && m.sender === 'Elizabeth' && arr[i-1] && m.text === arr[i-1].text)
               ).map((m, idx) => {
                 const isLiz = m.sender === 'Elizabeth' || m.isAi;
                 // Generate a dummy timestamp
