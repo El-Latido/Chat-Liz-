@@ -1,24 +1,26 @@
 FROM node:20-alpine
 
-# Set working directory
+# Configurar permisos para Hugging Face (requiere que la app corra con permisos seguros, no root)
+RUN mkdir -p /app && chown -R node:node /app
 WORKDIR /app
 
-# Copy package.json and install dependencies
-COPY package*.json ./
+# Ejecutar todo usando el usuario 'node' (uid 1000)
+USER node
+
+# Copiar configuraciones e instalar
+COPY --chown=node:node package*.json ./
 RUN npm install
 
-# Copy source code
-COPY . .
+# Copiar el resto del código
+COPY --chown=node:node . .
 
-# Build the application
+# Compilar proyecto
 RUN npm run build
 
-# Set environment to production
+# Configurar variables de entorno y puerto de Hugging Face
 ENV NODE_ENV=production
 ENV PORT=7860
-
-# Expose the standard port for Hugging Face
 EXPOSE 7860
 
-# Start the application
+# Iniciar aplicación
 CMD ["npm", "start"]
