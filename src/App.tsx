@@ -156,27 +156,61 @@ export default function App() {
 
   if (!isLoggedIn) {
     return (
-      <div className="h-[100dvh] bg-black text-white flex items-center justify-center p-6">
-        <div className="w-full max-w-sm bg-gray-950 p-8 rounded-3xl border border-purple-500/30 shadow-2xl">
-          <h2 className="text-3xl font-bold mb-6 text-center text-purple-400">Chat-Liz</h2>
-          <input className="w-full bg-gray-900 p-4 rounded-xl mb-4 border border-gray-800 outline-none focus:border-purple-500" placeholder="Nombre" onChange={e => setUser({...user, username: e.target.value})} />
-          <input className="w-full bg-gray-900 p-4 rounded-xl mb-6 border border-gray-800 outline-none focus:border-purple-500" type="password" placeholder="Contraseña" onChange={e => setUser({...user, password: e.target.value})} />
-          <button onClick={handleLogin} className="w-full bg-purple-600 p-4 rounded-xl font-bold hover:bg-purple-700 transition">Entrar</button>
+      <div className="h-[100dvh] relative flex items-center justify-center p-6 bg-gray-900 overflow-hidden">
+        {/* Colorful gradient background decoration */}
+        <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-purple-600/30 blur-[120px] rounded-full pointer-events-none" />
+        <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-pink-600/30 blur-[120px] rounded-full pointer-events-none" />
+        <div className="absolute top-[20%] right-[10%] w-[30%] h-[30%] bg-blue-600/20 blur-[100px] rounded-full pointer-events-none" />
+        
+        <div className="w-full max-w-sm bg-gray-950/80 backdrop-blur-xl p-8 rounded-3xl border border-white/10 shadow-2xl z-10 relative">
+          <div className="mb-8 text-center">
+            <h2 className="text-4xl font-black bg-gradient-to-r from-purple-400 via-pink-400 to-blue-400 text-transparent bg-clip-text">
+              Chat-Liz
+            </h2>
+            <p className="text-gray-400 text-sm mt-2 font-medium">Únete a la conversación</p>
+          </div>
+          
+          <div className="space-y-4">
+            <input 
+              className="w-full bg-gray-900/50 p-4 rounded-xl border border-gray-800 outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 transition-all placeholder:text-gray-600" 
+              placeholder="¿Cómo te llamas?" 
+              onChange={e => setUser({...user, username: e.target.value})} 
+            />
+            <input 
+              className="w-full bg-gray-900/50 p-4 rounded-xl border border-gray-800 outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 transition-all placeholder:text-gray-600" 
+              type="password" 
+              placeholder="Contraseña" 
+              onChange={e => setUser({...user, password: e.target.value})} 
+              onKeyDown={(e) => e.key === 'Enter' && handleLogin()}
+            />
+            <button 
+              onClick={handleLogin} 
+              className="w-full bg-gradient-to-r from-purple-600 to-pink-600 p-4 rounded-xl font-bold text-white shadow-lg shadow-purple-500/25 hover:shadow-purple-500/40 hover:scale-[1.02] transition-all"
+            >
+              Entrar
+            </button>
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="h-[100dvh] bg-black text-white flex flex-col font-sans overflow-hidden">
-      <header className="p-4 border-b border-gray-800 flex justify-between items-center bg-gray-950">
+    <div className="h-[100dvh] bg-gray-950 text-white flex flex-col font-sans overflow-hidden relative">
+      {/* Background ambient light */}
+      <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[40%] bg-purple-900/10 blur-[120px] rounded-full pointer-events-none" />
+      <div className="absolute bottom-[-20%] right-[-10%] w-[50%] h-[40%] bg-blue-900/10 blur-[120px] rounded-full pointer-events-none" />
+
+      <header className="p-4 border-b border-white/5 flex justify-between items-center bg-gray-950/80 backdrop-blur-md relative z-10">
         <div className="flex items-center gap-3">
-          {activeChat !== 'global' && <ArrowLeft onClick={() => setActiveChat('global')} className="cursor-pointer text-purple-400" />}
-          <h2 className="font-bold text-lg">{activeChat === 'global' ? 'Chat-Liz' : activeChat}</h2>
+          {activeChat !== 'global' && <ArrowLeft onClick={() => setActiveChat('global')} className="cursor-pointer text-pink-400 hover:text-pink-300 transition" />}
+          <h2 className="font-bold text-lg bg-gradient-to-r from-purple-400 to-pink-400 text-transparent bg-clip-text">
+            {activeChat === 'global' ? 'Chat Global' : activeChat}
+          </h2>
         </div>
-        <div className="flex gap-4">
-          <MessageSquare onClick={() => setIsPrivatePanelOpen(!isPrivatePanelOpen)} className="text-purple-400 cursor-pointer" size={24} />
-          <Settings onClick={() => { setProfileForm({ username: user.username, password: user.password }); setIsConfigOpen(true); }} className="cursor-pointer text-gray-400" />
+        <div className="flex gap-4 items-center">
+          <MessageSquare onClick={() => setIsPrivatePanelOpen(!isPrivatePanelOpen)} className="text-purple-400 hover:text-purple-300 cursor-pointer transition" size={24} />
+          <Settings onClick={() => { setProfileForm({ username: user.username, password: user.password }); setIsConfigOpen(true); }} className="cursor-pointer text-gray-400 hover:text-white transition" size={24} />
         </div>
       </header>
 
@@ -232,52 +266,70 @@ export default function App() {
         </div>
       )}
 
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+      <div className="flex-1 overflow-y-auto p-4 space-y-4 relative z-10 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent">
         {activeChat !== 'global' && (
-            <div onClick={() => setActiveChat('global')} className="text-purple-400 text-xs text-center cursor-pointer mb-4 hover:underline">
+            <div onClick={() => setActiveChat('global')} className="text-pink-400 text-xs text-center cursor-pointer mb-6 hover:underline hover:text-pink-300">
                 ← Volver al chat general
             </div>
         )}
-        {messages.map(m => (
-          <div key={m.id} className={`flex ${m.sender === user.username ? 'justify-end' : 'justify-start'}`}>
-            <div className={`px-4 py-3 rounded-2xl max-w-[80%] ${(m.sender === 'Elizabeth' || m.isAi) ? 'bg-purple-900/50 border border-purple-500' : m.sender === user.username ? 'bg-purple-600' : 'bg-gray-800'}`}>
-              <p className="text-[10px] opacity-70 mb-1">{m.sender}</p>
-              {m.image && <img src={m.image} className="rounded-lg mb-2 max-w-[200px]" alt="adjunto"/>}
-              {m.audio && <audio src={m.audio} controls className="h-8 w-40" />}
-              {m.text && <p className="text-sm whitespace-pre-wrap">{m.text}</p>}
+        {messages.map(m => {
+          const isMe = m.sender === user.username;
+          const isLiz = m.sender === 'Elizabeth' || m.isAi;
+          
+          let bubbleClass = 'bg-gray-800/80 border border-white/5';
+          if (isLiz) {
+            bubbleClass = 'bg-gradient-to-br from-purple-900/60 to-pink-900/40 border border-pink-500/30 backdrop-blur-sm shadow-lg shadow-purple-900/20';
+          } else if (isMe) {
+            bubbleClass = 'bg-blue-600 border border-blue-500/50 shadow-lg shadow-blue-900/20';
+          }
+          
+          return (
+            <div key={m.id} className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
+              <div className={`px-4 py-3 rounded-2xl max-w-[85%] ${bubbleClass} ${isMe ? 'rounded-tr-sm' : 'rounded-tl-sm'}`}>
+                <p className={`text-[10px] font-bold tracking-wider uppercase mb-1 ${isLiz ? 'text-pink-300' : isMe ? 'text-blue-200' : 'text-gray-400'}`}>{m.sender}</p>
+                {m.image && <img src={m.image} className="rounded-lg mb-2 max-w-[200px]" alt="adjunto"/>}
+                {m.audio && <audio src={m.audio} controls className="h-8 w-40 mt-2 filter brightness-110" />}
+                {m.text && <p className={`text-sm whitespace-pre-wrap leading-relaxed ${isMe ? 'text-white' : 'text-gray-100'}`}>{m.text}</p>}
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
         <div ref={bottomRef} className="pb-2" />
       </div>
 
-      <div className="p-4 bg-gray-950 border-t border-gray-800">
+      <div className="p-4 bg-gray-950/80 backdrop-blur-md border-t border-white/5 relative z-10">
         {selectedImage && (
           <div className="relative inline-block mb-3">
-             <img src={selectedImage} alt="Preview" className="h-20 rounded-lg border border-purple-500 object-cover shadow-lg" />
-             <button onClick={() => setSelectedImage(null)} className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1"><X size={14} /></button>
+             <img src={selectedImage} alt="Preview" className="h-20 rounded-lg border border-pink-500 object-cover shadow-lg" />
+             <button onClick={() => setSelectedImage(null)} className="absolute -top-2 -right-2 bg-red-500 hover:bg-red-600 text-white rounded-full p-1 transition"><X size={14} /></button>
           </div>
         )}
         {audioUrl && (
-          <div className="relative inline-block mb-3 flex items-center gap-2 bg-gray-900 px-3 py-1 rounded-xl">
-             <audio src={audioUrl} controls className="h-8 w-40" />
-             <button onClick={() => setAudioUrl(null)} className="bg-red-500 text-white rounded-full p-1"><X size={14} /></button>
+          <div className="relative inline-block mb-3 flex items-center gap-2 bg-gray-900 border border-white/5 px-3 py-1 rounded-xl">
+             <audio src={audioUrl} controls className="h-8 w-40 filter brightness-110" />
+             <button onClick={() => setAudioUrl(null)} className="bg-red-500 hover:bg-red-600 text-white rounded-full p-1 transition"><X size={14} /></button>
           </div>
         )}
         <div className="flex gap-3 items-center">
           <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleImageSelect} />
-          <ImageIcon onClick={() => fileInputRef.current?.click()} className="text-purple-400 cursor-pointer flex-shrink-0" />
-          {isRecording ? <StopCircle onClick={stopRecording} className="text-red-500 cursor-pointer animate-pulse flex-shrink-0" /> : <Mic onClick={startRecording} className="text-purple-400 cursor-pointer flex-shrink-0" />}
-          <div className="flex-1 flex items-center bg-gray-900 rounded-full pr-2">
+          <div onClick={() => fileInputRef.current?.click()} className="p-3 bg-gray-900 border border-white/10 rounded-full text-purple-400 cursor-pointer flex-shrink-0 hover:bg-purple-900/30 hover:border-purple-500/50 hover:text-purple-300 transition-all shadow-md">
+            <ImageIcon size={20} />
+          </div>
+          <div onClick={isRecording ? stopRecording : startRecording} className={`p-3 bg-gray-900 border border-white/10 rounded-full cursor-pointer flex-shrink-0 transition-all shadow-md ${isRecording ? 'text-red-500 animate-pulse border-red-500/50 bg-red-900/20' : 'text-purple-400 hover:bg-purple-900/30 hover:border-purple-500/50 hover:text-purple-300'}`}>
+            {isRecording ? <StopCircle size={20} /> : <Mic size={20} />}
+          </div>
+          <div className="flex-1 flex items-center bg-gray-900 border border-white/10 rounded-full pr-2 focus-within:border-pink-500/50 focus-within:ring-1 focus-within:ring-pink-500/30 transition-all shadow-inner">
             <input 
               value={inputValue} 
               onChange={e => setInputValue(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && handleSendMessage()}
-              className="flex-1 bg-transparent px-4 py-3 outline-none text-sm placeholder-gray-500" 
+              className="flex-1 bg-transparent px-5 py-3 outline-none text-sm placeholder-gray-500 text-white" 
               placeholder="Habla..." 
             />
           </div>
-          <Send onClick={handleSendMessage} className="text-purple-500 cursor-pointer flex-shrink-0" />
+          <button onClick={handleSendMessage} className="p-3 bg-gradient-to-r from-purple-600 to-pink-600 rounded-full cursor-pointer flex-shrink-0 hover:scale-105 shadow-lg shadow-purple-500/30 hover:shadow-pink-500/50 transition-all">
+            <Send size={20} className="text-white ml-0.5" />
+          </button>
         </div>
       </div>
     </div>
