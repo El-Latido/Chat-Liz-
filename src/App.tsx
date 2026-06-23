@@ -1,13 +1,41 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, ErrorInfo, Component } from 'react';
 import { 
   Send, User, MessageCircle, Settings, Bot, 
   Image as ImageIcon, Mic, StopCircle, 
-  Menu, X, Hash, MessageSquare, Plus, LogOut, Check
+  Menu, X, Hash, MessageSquare, Plus, LogOut, Check, Search
 } from 'lucide-react';
 import { socket } from './socket';
 import { FuturisticCanvas } from './components/FuturisticCanvas';
 
-export default function App() {
+class ErrorBoundary extends Component<{children: React.ReactNode}, {hasError: boolean, error: Error | null}> {
+  constructor(props: {children: React.ReactNode}) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+
+  static getDerivedStateFromError(error: Error) {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+    console.error("ErrorBoundary caught an error", error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div style={{ padding: '20px', background: 'red', color: 'white', zIndex: 9999, position: 'relative' }}>
+          <h1>Algo salió mal en la aplicación.</h1>
+          <pre>{this.state.error?.toString()}</pre>
+          <pre>{this.state.error?.stack}</pre>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
+function MainApp() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [user, setUser] = useState({ username: '', password: '' });
   const [isConfigOpen, setIsConfigOpen] = useState(false);
@@ -439,13 +467,21 @@ export default function App() {
                   });
                 }}
                 className="w-full mt-4 bg-white/10 hover:bg-white/20 text-white p-4 rounded-xl font-bold transition-colors"
-              >
-                Guardar Cambios
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+               >
+                 Guardar Cambios
+               </button>
+             </div>
+           </div>
+         </div>
+       )}
     </div>
+  );
+}
+
+export default function App() {
+  return (
+    <ErrorBoundary>
+      <MainApp />
+    </ErrorBoundary>
   );
 }
