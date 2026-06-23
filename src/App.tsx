@@ -483,8 +483,35 @@ function MainApp() {
 }
 
 export default function App() {
+  useEffect(() => {
+    if (!document.getElementById('tailwind-cdn')) {
+      const script = document.createElement('script');
+      script.id = 'tailwind-cdn';
+      script.src = 'https://cdn.tailwindcss.com';
+      document.head.appendChild(script);
+    }
+  }, []);
+
   return (
     <ErrorBoundary>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap');
+        body {
+          font-family: 'Inter', sans-serif;
+          background-color: #0a0a16;
+          color: white;
+        }
+        .scrollbar-thin::-webkit-scrollbar {
+          width: 6px;
+        }
+        .scrollbar-thin::-webkit-scrollbar-track {
+          background: transparent;
+        }
+        .scrollbar-thin::-webkit-scrollbar-thumb {
+          background: rgba(6, 182, 212, 0.2);
+          border-radius: 20px;
+        }
+      `}</style>
       <MainApp />
     </ErrorBoundary>
   );
