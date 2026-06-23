@@ -274,8 +274,8 @@ function MainApp() {
                  <div className="px-4 w-full">
                     <button 
                        onClick={() => setActiveChat('Elizabeth')}
-                       className={`w-full flex items-center justify-between px-4 py-3 rounded-2xl border ${activeChat === 'Elizabeth' || activeChat === 'global' ? 'bg-[#1a1c26] border-cyan-400/50 shadow-[0_0_15px_rgba(6,182,212,0.15)]' : 'border-transparent hover:bg-white/5'} transition-all`}
-                       style={ (activeChat === 'Elizabeth' || activeChat === 'global') ? { background: 'linear-gradient(90deg, rgba(6,182,212,0.1) 0%, rgba(168,85,247,0.1) 100%)', borderImage: 'linear-gradient(to right, #06b6d4, #a855f7) 1', borderRadius: '1rem' } : {} }
+                       className={`w-full flex items-center justify-between px-4 py-3 rounded-2xl border ${activeChat === 'Elizabeth' || activeChat === 'global' ? 'shadow-[0_0_15px_rgba(6,182,212,0.15)]' : 'border-transparent hover:bg-white/5'} transition-all`}
+                       style={ (activeChat === 'Elizabeth' || activeChat === 'global') ? { background: 'linear-gradient(#1a1c26, #1a1c26) padding-box, linear-gradient(to right, #06b6d4, #a855f7) border-box', border: '1px solid transparent' } : {} }
                     >
                         <div className="flex items-center gap-3">
                            <div className="w-8 h-8 rounded-full bg-cyan-900/50 border border-cyan-500/50 flex items-center justify-center">
@@ -316,8 +316,8 @@ function MainApp() {
           </aside>
 
           {/* Main Chat Container */}
-          <main className="flex-1 rounded-3xl relative flex flex-col bg-[#0f111a] border border-cyan-500/30 overflow-hidden shadow-[0_0_30px_rgba(6,182,212,0.1),inset_0_0_20px_rgba(168,85,247,0.05)]"
-                style={{ background: 'linear-gradient(135deg, rgba(15,17,26,1) 0%, rgba(18,20,31,1) 100%)', boxShadow: '0 0 0 1px rgba(6,182,212,0.3), 0 0 40px rgba(6,182,212,0.1)' }}>
+          <main className="flex-1 rounded-3xl relative flex flex-col bg-[#0f111a] overflow-hidden shadow-[0_0_30px_rgba(6,182,212,0.1)] border"
+                style={{ background: 'linear-gradient(#0f111a, #0f111a) padding-box, linear-gradient(135deg, #06b6d4 0%, #a855f7 100%) border-box', border: '1px solid transparent' }}>
               
               {/* Outer gradient border illusion via linear-gradient using a wrapper, but implemented directly on container above with box-shadow */}
               
