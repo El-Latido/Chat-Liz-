@@ -3,12 +3,12 @@ import http from "http";
 import path from "path";
 import { Server } from "socket.io";
 import { createServer as createViteServer } from "vite";
-import { initializeApp } from "firebase/app";
-import { getFirestore, collection, doc, getDoc, setDoc, updateDoc, deleteDoc, getDocs, addDoc, query, orderBy, limitToLast, limit, serverTimestamp, getCountFromServer, onSnapshot } from "firebase/firestore";
-import { getStorage, ref, uploadString, getDownloadURL } from "firebase/storage";
+import { collection, doc, getDoc, setDoc, updateDoc, deleteDoc, getDocs, addDoc, query, orderBy, limitToLast, limit, serverTimestamp, getCountFromServer, onSnapshot } from "firebase/firestore";
+import { ref, uploadString, getDownloadURL } from "firebase/storage";
 import fs from "fs";
 import { GoogleGenAI } from "@google/genai";
 import dotenv from "dotenv";
+import { fdb, fStorage } from "./server/firebase";
 
 dotenv.config();
 
@@ -21,26 +21,10 @@ const ai = new GoogleGenAI({
   },
 });
 
-// Firebase Setup
-let fdb: any = null;
-let fStorage: any = null;
-try {
-  const configPath = path.join(process.cwd(), "firebase-applet-config.json");
-  if (fs.existsSync(configPath)) {
-    const firebaseConfig = JSON.parse(fs.readFileSync(configPath, "utf8"));
-    const appInfo = initializeApp(firebaseConfig);
-    fdb = getFirestore(appInfo, firebaseConfig.firestoreDatabaseId || undefined);
-    fStorage = getStorage(appInfo);
-    console.log("Firebase initialized");
-  }
-} catch(e) {
-  console.error("Firebase initialization failed:", e);
-}
-
 // Fallback JSON DB if no Firebase configured (e.g. initial setup)
 const DB_FILE = path.join(process.cwd(), "db.json");
 interface DBState {
-  users: Record<string, { password?: string, profilePic?: string, statusMessage?: string, role?: string }>;
+  users: Record<string, { password?: string, profilePic?: string, statusMessage?: string, role?: string, pais_idioma?: string, securityEmail?: string }>;
   globalMessages: any[];
 }
 let fallbackState: DBState = { users: {}, globalMessages: [] };
@@ -371,9 +355,8 @@ async function startServer() {
         saveFallbackDB();
       }
 
-      // Instead of io.emit("receive_global", msg);
       const senderLanguage = activeUsers[currentUsername]?.pais_idioma || 'es';
-      const translationCache = new Map<string, string>(); // language -> translated text
+      const translationCache = new Map<string, string>(); 
 
       for (const [uname, userData] of Object.entries(activeUsers)) {
          const receiverLanguage = userData.pais_idioma || 'es';

@@ -3,9 +3,14 @@ import {
   Send, User, MessageCircle, Settings, Bot, 
   Image as ImageIcon, Mic, StopCircle, 
   Menu, X, Hash, MessageSquare, LogOut, Search,
-  Paperclip, Smile, Lock, EyeOff, Globe
+  Paperclip, Smile, Globe
 } from 'lucide-react';
 import { socket } from './socket';
+import { UserObj, MessageObj } from './types';
+import { Login } from './components/Login';
+import { RecoveryModal } from './components/RecoveryModal';
+import { ProfileConfigModal } from './components/ProfileConfigModal';
+import { AdminConfigLizModal } from './components/AdminConfigLizModal';
 
 class ErrorBoundary extends React.Component<any, any> {
   constructor(props: any) {
@@ -33,15 +38,6 @@ class ErrorBoundary extends React.Component<any, any> {
     }
     return this.props.children;
   }
-}
-
-interface UserObj {
-  username: string;
-  profilePic?: string;
-  statusMessage?: string;
-  role?: string;
-  countryLanguage?: string;
-  securityEmail?: string;
 }
 
 function MainApp() {
@@ -210,262 +206,29 @@ function MainApp() {
 
   if (!isLoggedIn) {
     return (
-      <div style={{
-        minHeight: '100vh',
-        width: '100%',
-        display: 'flex',
-        flexDirection: 'column',
-        justifyContent: 'center',
-        alignItems: 'center',
-        backgroundColor: '#050508',
-        backgroundImage: 'radial-gradient(circle at center, #131720 0%, #050508 100%), url("data:image/svg+xml,%3Csvg width=\'24\' height=\'24\' viewBox=\'0 0 24 24\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cpath d=\'M0 0h1v1H0V0zm12 12h1v1h-1v-1z\' fill=\'rgba(255,255,255,0.02)\' fill-rule=\'evenodd\'/%3E%3C/svg%3E")',
-        fontFamily: 'Inter, sans-serif'
-      }}>
-        <div style={{ position: 'relative', width: '100%', maxWidth: '480px', margin: '0 auto', padding: '0 20px', boxSizing: 'border-box' }}>
-          
-          <div style={{
-            position: 'relative',
-            zIndex: 10,
-            padding: '2px',
-            borderRadius: '24px',
-            background: 'linear-gradient(90deg, #00f2fe 0%, #4facfe 30%, #f093fb 70%, #f5576c 100%)',
-            boxShadow: '0 0 20px rgba(0, 242, 254, 0.4), 0 0 40px rgba(245, 87, 108, 0.2)'
-          }}>
-             
-             <div style={{
-                position: 'relative',
-                backgroundColor: 'rgba(13, 17, 26, 0.95)',
-                backdropFilter: 'blur(10px)',
-                borderRadius: '22px',
-                overflow: 'hidden',
-                padding: '48px 32px'
-             }}>
-                
-                {/* Circuit Grid Background inside panel */}
-                <div style={{
-                   position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
-                   opacity: 0.1,
-                   pointerEvents: 'none',
-                   backgroundImage: 'linear-gradient(rgba(255,255,255,1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,1) 1px, transparent 1px)',
-                   backgroundSize: '20px 20px'
-                }}></div>
-
-                {/* Corner Tech Brackets */}
-                <div style={{ position: 'absolute', top: 0, left: 0, width: '64px', height: '64px', borderTop: '4px solid #00f2fe', borderLeft: '4px solid #00f2fe', borderTopLeftRadius: '22px', boxShadow: 'inset 4px 4px 10px rgba(0,242,254,0.3)', pointerEvents: 'none' }}></div>
-                <div style={{ position: 'absolute', top: 0, right: 0, width: '64px', height: '64px', borderTop: '4px solid #f5576c', borderRight: '4px solid #f5576c', borderTopRightRadius: '22px', boxShadow: 'inset -4px 4px 10px rgba(245,87,108,0.3)', pointerEvents: 'none' }}></div>
-                <div style={{ position: 'absolute', bottom: 0, left: 0, width: '64px', height: '64px', borderBottom: '4px solid #00f2fe', borderLeft: '4px solid #00f2fe', borderBottomLeftRadius: '22px', boxShadow: 'inset 4px -4px 10px rgba(0,242,254,0.3)', pointerEvents: 'none' }}></div>
-                <div style={{ position: 'absolute', bottom: 0, right: 0, width: '64px', height: '64px', borderBottom: '4px solid #f5576c', borderRight: '4px solid #f5576c', borderBottomRightRadius: '22px', boxShadow: 'inset -4px -4px 10px rgba(245,87,108,0.3)', pointerEvents: 'none' }}></div>
-                
-                {/* Subtle side glowing overlays */}
-                <div style={{ position: 'absolute', top: '25%', bottom: '25%', left: 0, width: '2px', backgroundColor: '#00f2fe', boxShadow: '0 0 15px 2px #00f2fe' }}></div>
-                <div style={{ position: 'absolute', top: '25%', bottom: '25%', right: 0, width: '2px', backgroundColor: '#f5576c', boxShadow: '0 0 15px 2px #f5576c' }}></div>
-
-                <div style={{ position: 'relative', zIndex: 10, display: 'flex', flexDirection: 'column', gap: '24px' }}>
-                   
-                   <div style={{ position: 'relative' }}>
-                     <div style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: 'rgba(0, 242, 254, 0.7)', pointerEvents: 'none', zIndex: 10 }}>
-                        <User size={20} strokeWidth={2} />
-                     </div>
-                     <input 
-                       style={{
-                         width: '100%', backgroundColor: 'rgba(24, 27, 43, 0.8)', padding: '16px 16px 16px 48px',
-                         borderRadius: '12px', border: '1px solid rgba(255,255,255,0.1)', outline: 'none',
-                         color: 'white', fontSize: '15px', backdropFilter: 'blur(5px)',
-                         boxShadow: 'inset 0 2px 10px rgba(0,0,0,0.5)', transition: 'all 0.3s ease',
-                         boxSizing: 'border-box'
-                       }}
-                       onFocus={(e) => { e.currentTarget.style.border = '1px solid rgba(0, 242, 254, 0.5)'; e.currentTarget.style.boxShadow = '0 0 15px rgba(0,242,254,0.2), inset 0 2px 10px rgba(0,0,0,0.5)'; }}
-                       onBlur={(e) => { e.currentTarget.style.border = '1px solid rgba(255,255,255,0.1)'; e.currentTarget.style.boxShadow = 'inset 0 2px 10px rgba(0,0,0,0.5)'; }}
-                       placeholder="Nombre de Usuario..." 
-                       onChange={e => setUser({...user, username: e.target.value})} 
-                     />
-                   </div>
-
-                   <div style={{ position: 'relative' }}>
-                     <div style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: 'rgba(0, 242, 254, 0.7)', pointerEvents: 'none', zIndex: 10 }}>
-                        <Lock size={20} strokeWidth={2} />
-                     </div>
-                     <input 
-                       style={{
-                         width: '100%', backgroundColor: 'rgba(24, 27, 43, 0.8)', padding: '16px 48px 16px 48px',
-                         borderRadius: '12px', border: '1px solid rgba(255,255,255,0.1)', outline: 'none',
-                         color: 'white', fontSize: '15px', backdropFilter: 'blur(5px)',
-                         boxShadow: 'inset 0 2px 10px rgba(0,0,0,0.5)', transition: 'all 0.3s ease',
-                         boxSizing: 'border-box'
-                       }}
-                       type="password" 
-                       onFocus={(e) => { e.currentTarget.style.border = '1px solid rgba(0, 242, 254, 0.5)'; e.currentTarget.style.boxShadow = '0 0 15px rgba(0,242,254,0.2), inset 0 2px 10px rgba(0,0,0,0.5)'; }}
-                       onBlur={(e) => { e.currentTarget.style.border = '1px solid rgba(255,255,255,0.1)'; e.currentTarget.style.boxShadow = 'inset 0 2px 10px rgba(0,0,0,0.5)'; }}
-                       placeholder="Contraseña..." 
-                       onChange={e => setUser({...user, password: e.target.value})} 
-                       onKeyDown={(e) => e.key === 'Enter' && handleLogin()}
-                     />
-                     <button style={{ position: 'absolute', right: '16px', top: '50%', transform: 'translateY(-50%)', color: '#9ca3af', background: 'transparent', border: 'none', cursor: 'pointer' }} onMouseOver={e => e.currentTarget.style.color='white'} onMouseOut={e => e.currentTarget.style.color='#9ca3af'}>
-                        <EyeOff size={20} strokeWidth={2} />
-                     </button>
-                   </div>
-
-                   <div style={{ position: 'relative' }}>
-                     <div style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: 'rgba(0, 242, 254, 0.7)', pointerEvents: 'none', zIndex: 10 }}>
-                        <Lock size={20} strokeWidth={2} />
-                     </div>
-                     <input 
-                       style={{
-                         width: '100%', backgroundColor: 'rgba(24, 27, 43, 0.8)', padding: '16px 16px 16px 48px',
-                         borderRadius: '12px', border: '1px solid rgba(255,255,255,0.1)', outline: 'none',
-                         color: 'white', fontSize: '15px', backdropFilter: 'blur(5px)',
-                         boxShadow: 'inset 0 2px 10px rgba(0,0,0,0.5)', transition: 'all 0.3s ease',
-                         boxSizing: 'border-box'
-                       }}
-                       type="email" 
-                       onFocus={(e) => { e.currentTarget.style.border = '1px solid rgba(0, 242, 254, 0.5)'; e.currentTarget.style.boxShadow = '0 0 15px rgba(0,242,254,0.2), inset 0 2px 10px rgba(0,0,0,0.5)'; }}
-                       onBlur={(e) => { e.currentTarget.style.border = '1px solid rgba(255,255,255,0.1)'; e.currentTarget.style.boxShadow = 'inset 0 2px 10px rgba(0,0,0,0.5)'; }}
-                       placeholder="Email de Recuperación (Opcional)" 
-                       onChange={e => setUser({...user, securityEmail: e.target.value})} 
-                     />
-                   </div>
-
-                   <div style={{ position: 'relative' }}>
-                     <select
-                       style={{
-                         width: '100%', backgroundColor: 'rgba(24, 27, 43, 0.8)', padding: '16px',
-                         borderRadius: '12px', border: '1px solid rgba(255,255,255,0.1)', outline: 'none',
-                         color: 'white', fontSize: '15px', backdropFilter: 'blur(5px)',
-                         boxShadow: 'inset 0 2px 10px rgba(0,0,0,0.5)', transition: 'all 0.3s ease',
-                         boxSizing: 'border-box', appearance: 'none'
-                       }}
-                       value={user.countryLanguage || 'es'}
-                       onChange={e => setUser({...user, countryLanguage: e.target.value})}
-                       onFocus={(e) => { e.currentTarget.style.border = '1px solid rgba(0, 242, 254, 0.5)'; e.currentTarget.style.boxShadow = '0 0 15px rgba(0,242,254,0.2), inset 0 2px 10px rgba(0,0,0,0.5)'; }}
-                       onBlur={(e) => { e.currentTarget.style.border = '1px solid rgba(255,255,255,0.1)'; e.currentTarget.style.boxShadow = 'inset 0 2px 10px rgba(0,0,0,0.5)'; }}
-                     >
-                       <option value="es" style={{color: 'black'}}>Español</option>
-                       <option value="en" style={{color: 'black'}}>English</option>
-                       <option value="pt" style={{color: 'black'}}>Português</option>
-                       <option value="fr" style={{color: 'black'}}>Français</option>
-                       <option value="de" style={{color: 'black'}}>Deutsch</option>
-                     </select>
-                     <div style={{ position: 'absolute', right: '16px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }}>
-                        <span style={{color: 'white'}}>▼</span>
-                     </div>
-                   </div>
-
-                   <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '-8px' }}>
-                      <a href="#" onClick={(e) => { e.preventDefault(); setRecoveryModalOpen(true); }} style={{ fontSize: '14px', color: '#d1d5db', textDecoration: 'underline', textUnderlineOffset: '4px', textDecorationColor: '#6b7280' }} onMouseOver={e => { e.currentTarget.style.color='#00f2fe'; e.currentTarget.style.textDecorationColor='#00f2fe'; }} onMouseOut={e => { e.currentTarget.style.color='#d1d5db'; e.currentTarget.style.textDecorationColor='#6b7280'; }}>¿Olvidaste tu contraseña?</a>
-                   </div>
-
-                   <button 
-                     onClick={handleLogin} 
-                     style={{
-                       width: '100%', marginTop: '16px', padding: '16px', borderRadius: '12px',
-                       fontWeight: 'bold', fontSize: '16px', color: 'white', letterSpacing: '1px',
-                       background: 'linear-gradient(90deg, #00f2fe 0%, #f5576c 100%)',
-                       border: '1px solid rgba(255,255,255,0.2)', cursor: 'pointer',
-                       boxShadow: '0 0 20px rgba(245, 87, 108, 0.4)', transition: 'all 0.3s ease',
-                       position: 'relative', overflow: 'hidden'
-                     }}
-                     onMouseOver={(e) => { e.currentTarget.style.boxShadow = '0 0 35px rgba(0, 242, 254, 0.6)'; }}
-                     onMouseOut={(e) => { e.currentTarget.style.boxShadow = '0 0 20px rgba(245, 87, 108, 0.4)'; }}
-                   >
-                     ENTRAR AL CHAT
-                   </button>
-
-                   <div style={{ textAlign: 'center', marginTop: '12px' }}>
-                      <a href="#" style={{ fontSize: '14px', color: '#d1d5db', textDecoration: 'underline', textUnderlineOffset: '4px', textDecorationColor: '#6b7280' }} onMouseOver={e => { e.currentTarget.style.color='white'; e.currentTarget.style.textDecorationColor='white'; }} onMouseOut={e => { e.currentTarget.style.color='#d1d5db'; e.currentTarget.style.textDecorationColor='#6b7280'; }}>Crear nueva cuenta</a>
-                   </div>
-                </div>
-             </div>
-          </div>
-          
-          {/* Glass Reflection Under Container */}
-          <div style={{ position: 'relative', marginTop: '8px', height: '80px', overflow: 'hidden', margin: '8px 32px 0 32px', opacity: 0.4 }}>
-             <div style={{
-               width: '100%', height: '100%', borderTop: '2px solid #00f2fe', borderRadius: '24px 24px 0 0',
-               position: 'absolute', top: '-10px', transform: 'scaleY(-1)',
-               maskImage: 'linear-gradient(to bottom, black, transparent)', WebkitMaskImage: 'linear-gradient(to bottom, black, transparent)',
-               background: 'linear-gradient(90deg, #00f2fe 0%, #f5576c 100%)', filter: 'blur(3px)'
-             }}></div>
-          </div>
-
-          {recoveryModalOpen && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm shadow-2xl">
-               <div className="bg-[#0f111a] p-6 rounded-2xl border border-white/10 w-full max-w-sm relative">
-                  <button onClick={() => { setRecoveryModalOpen(false); setRecoveryStep(1); }} className="absolute text-gray-500 top-4 right-4 hover:text-white">
-                     <X size={20} />
-                  </button>
-                  <h3 className="mb-4 text-xl font-bold text-center text-white">Recuperar Contraseña</h3>
-                  
-                  {recoveryStep === 1 && (
-                     <div className="space-y-4">
-                        <p className="text-sm text-gray-400">Ingresa tu usuario para solicitar un código de recuperación.</p>
-                        <input className="w-full p-3 text-white transition-all border outline-none bg-white/5 rounded-xl border-white/10 focus:border-cyan-500" placeholder="Usuario" value={recoveryUsername} onChange={e => setRecoveryUsername(e.target.value)} />
-                        <button 
-                           onClick={() => {
-                              if (!recoveryUsername) return;
-                              socket.emit('forgot_password_request', recoveryUsername, (res: any) => {
-                                 if (res.success) {
-                                    setRecoveryCodeStr(res.code);
-                                    setRecoveryStep(2);
-                                 } else {
-                                    alert(res.error);
-                                 }
-                              });
-                           }}
-                           className="w-full p-3 font-bold text-white transition-all shadow-lg bg-gradient-to-r from-cyan-500 to-blue-500 rounded-xl hover:shadow-cyan-500/50"
-                        >
-                           Enviar Código
-                        </button>
-                     </div>
-                  )}
-
-                  {recoveryStep === 2 && (
-                     <div className="space-y-4">
-                        <p className="text-sm text-gray-400">Este es tu código de recuperación: <strong className="text-cyan-400">{recoveryCodeStr}</strong></p>
-                        <input className="w-full p-3 text-white transition-all border outline-none bg-white/5 rounded-xl border-white/10 focus:border-cyan-500" placeholder="Ingresa el código" value={inputRecoveryCode} onChange={e => setInputRecoveryCode(e.target.value.toUpperCase())} />
-                        <button 
-                           onClick={() => {
-                              if (inputRecoveryCode === recoveryCodeStr) {
-                                 setRecoveryStep(3);
-                              } else {
-                                 alert("Código incorrecto");
-                              }
-                           }}
-                           className="w-full p-3 font-bold text-white transition-all shadow-lg bg-gradient-to-r from-cyan-500 to-blue-500 rounded-xl hover:shadow-cyan-500/50"
-                        >
-                           Verificar
-                        </button>
-                     </div>
-                  )}
-
-                  {recoveryStep === 3 && (
-                     <div className="space-y-4">
-                        <p className="text-sm text-gray-400">Ingresa tu nueva contraseña para cambiarla.</p>
-                        <input type="password" className="w-full p-3 text-white transition-all border outline-none bg-white/5 rounded-xl border-white/10 focus:border-cyan-500" placeholder="Nueva Contraseña" value={newPassword} onChange={e => setNewPassword(e.target.value)} />
-                        <button 
-                           onClick={() => {
-                              if (!newPassword) return;
-                              socket.emit('forgot_password_reset', { username: recoveryUsername, newPassword, code: inputRecoveryCode }, (res: any) => {
-                                 if (res.success) {
-                                    alert("Contraseña actualizada exitosamente.");
-                                    setRecoveryModalOpen(false);
-                                    setRecoveryStep(1);
-                                 } else {
-                                    alert(res.error);
-                                 }
-                              });
-                           }}
-                           className="w-full p-3 font-bold text-white transition-all shadow-lg bg-gradient-to-r from-cyan-500 to-blue-500 rounded-xl hover:shadow-cyan-500/50"
-                        >
-                           Cambiar Contraseña
-                        </button>
-                     </div>
-                  )}
-               </div>
-            </div>
-          )}
-
-        </div>
-      </div>
+      <>
+        <Login 
+          user={user} 
+          setUser={setUser} 
+          handleLogin={handleLogin} 
+          setRecoveryModalOpen={setRecoveryModalOpen} 
+        />
+        {recoveryModalOpen && (
+          <RecoveryModal
+            recoveryStep={recoveryStep}
+            setRecoveryStep={setRecoveryStep}
+            recoveryUsername={recoveryUsername}
+            setRecoveryUsername={setRecoveryUsername}
+            recoveryCodeStr={recoveryCodeStr}
+            setRecoveryCodeStr={setRecoveryCodeStr}
+            inputRecoveryCode={inputRecoveryCode}
+            setInputRecoveryCode={setInputRecoveryCode}
+            newPassword={newPassword}
+            setNewPassword={setNewPassword}
+            setRecoveryModalOpen={setRecoveryModalOpen}
+          />
+        )}
+      </>
     );
   }
 
@@ -683,190 +446,28 @@ function MainApp() {
           </main>
       </div>
 
-      {/* Config Modal */}
       {isConfigOpen && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-[#12141c] p-6 lg:p-8 rounded-3xl w-full max-w-md shadow-2xl relative border border-white/10 max-h-[90vh] overflow-y-auto scrollbar-thin">
-            <button onClick={() => setIsConfigOpen(false)} className="absolute top-4 right-4 text-gray-400 hover:text-white bg-white/5 hover:bg-white/10 p-2 rounded-full transition-colors">
-               <X size={20} />
-            </button>
-            <h2 className="text-2xl font-bold text-white flex items-center gap-2 mb-6">
-               <Settings size={22} className="text-cyan-400" />
-               Ajustes de Perfil
-            </h2>
-            <div className="space-y-4">
-              <div className="flex flex-col items-center mb-4">
-                <div className="w-24 h-24 rounded-full border-2 border-dashed border-gray-600 flex items-center justify-center overflow-hidden bg-black/30 relative">
-                   <img src={profileForm.profilePic || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.username}`} alt="avatar" className="w-full h-full object-cover" />
-                   <input type="file" title="Subir foto de perfil" className="absolute inset-0 opacity-0 cursor-pointer" accept="image/*" onChange={e => {
-                      const file = e.target.files?.[0];
-                      if (file) {
-                        const reader = new FileReader();
-                        reader.onload = () => setProfileForm({...profileForm, profilePic: reader.result as string});
-                        reader.readAsDataURL(file);
-                      }
-                   }} />
-                </div>
-                <span className="text-xs text-gray-500 mt-2">Haz clic para cambiar foto</span>
-              </div>
-              
-              <div className="space-y-2">
-                <label className="text-sm font-semibold text-gray-400">Usuario</label>
-                <input 
-                   disabled
-                   value={profileForm.username}
-                   className="w-full bg-[#0a0a16] p-3 rounded-xl border border-white/5 outline-none text-gray-500 opacity-70 cursor-not-allowed" 
-                />
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-semibold text-gray-400">Estado / Comentario</label>
-                <input 
-                   value={profileForm.statusMessage || ''}
-                   onChange={e => setProfileForm({...profileForm, statusMessage: e.target.value})}
-                   maxLength={60}
-                   placeholder="Ej: Hola a todos!"
-                   type="text"
-                   className="w-full bg-[#0a0a16] p-3 rounded-xl border border-white/10 outline-none focus:border-cyan-500 transition-all text-white" 
-                />
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-semibold text-gray-400">Contraseña</label>
-                <input 
-                   value={profileForm.password}
-                   onChange={e => setProfileForm({...profileForm, password: e.target.value})}
-                   type="password"
-                   className="w-full bg-[#0a0a16] p-3 rounded-xl border border-white/10 outline-none focus:border-cyan-500 focus:shadow-[0_0_15px_rgba(6,182,212,0.2)] transition-all text-white" 
-                />
-              </div>
+        <ProfileConfigModal
+          user={user}
+          setUser={setUser}
+          profileForm={profileForm}
+          setProfileForm={setProfileForm}
+          setIsConfigOpen={setIsConfigOpen}
+          setAdminConfigLizOpen={setAdminConfigLizOpen}
+          usersOnline={usersOnline}
+          setAiProfileForm={setAiProfileForm}
+        />
+      )}
 
-              <div className="space-y-2">
-                <label className="text-sm font-semibold text-gray-400">País / Idioma</label>
-                <div className="relative">
-                  <select
-                     value={profileForm.countryLanguage || 'es'}
-                     onChange={e => setProfileForm({...profileForm, countryLanguage: e.target.value})}
-                     className="w-full bg-[#0a0a16] p-3 rounded-xl border border-white/10 outline-none focus:border-cyan-500 transition-all text-white appearance-none"
-                  >
-                     <option value="es">Español</option>
-                     <option value="en">English</option>
-                     <option value="pt">Português</option>
-                     <option value="fr">Français</option>
-                     <option value="de">Deutsch</option>
-                  </select>
-                  <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-500">
-                     ▼
-                  </div>
-                </div>
-              </div>
-              
-              {user.username === 'AXISS' && (
-                 <button onClick={() => { 
-                    const aiUser = usersOnline.find(u => u.username === 'Elizabeth');
-                    setAiProfileForm({ profilePic: aiUser?.profilePic || '', statusMessage: aiUser?.statusMessage || 'IA Asistente virtual' });
-                    setIsConfigOpen(false); 
-                    setAdminConfigLizOpen(true); 
-                 }} className="w-full flex items-center justify-center gap-2 text-fuchsia-400 border border-fuchsia-400 bg-fuchsia-500/10 p-3 rounded-xl font-bold mt-2 hover:bg-fuchsia-500/20 transition-all">
-                    <Bot size={18} /> Configurar a HELIZABETH
-                 </button>
-              )}
+      {adminConfigLizOpen && (
+        <AdminConfigLizModal
+          setAdminConfigLizOpen={setAdminConfigLizOpen}
+          aiProfileForm={aiProfileForm}
+          setAiProfileForm={setAiProfileForm}
+        />
+      )}
 
-              <button 
-                onClick={() => {
-                  socket.emit('update_profile', { oldUsername: user.username, newUsername: profileForm.username, newPassword: profileForm.password, profilePic: profileForm.profilePic, statusMessage: profileForm.statusMessage, countryLanguage: profileForm.countryLanguage }, (res: any) => {
-                    if (res.success) {
-                        setUser({...user, username: res.username, password: profileForm.password, profilePic: res.profilePic, statusMessage: res.statusMessage, countryLanguage: res.countryLanguage });
-                        setIsConfigOpen(false);
-                    } else {
-                        alert(res.error);
-                    }
-                  });
-                }}
-                className="w-full mt-4 bg-cyan-600 hover:bg-cyan-500 text-white p-3 rounded-xl font-bold transition-colors shadow-[0_4px_14px_rgba(6,182,212,0.3)]"
-               >
-                 Guardar Cambios
-               </button>
-             </div>
-             
-             <div className="mt-8 pt-6 border-t border-white/10">
-                <button 
-                  onClick={() => window.location.reload()}
-                  className="w-full flex items-center justify-center gap-2 text-red-400 bg-red-400/10 hover:bg-red-400/20 p-3 rounded-xl font-medium transition-colors border border-red-400/20"
-                >
-                  <LogOut size={18} />
-                  Cerrar Sesión
-                </button>
-             </div>
-           </div>
-         </div>
-       )}
-       {/* Admin Config Liz Modal */}
-       {adminConfigLizOpen && (
-         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-           <div className="bg-[#12141c] p-6 lg:p-8 rounded-3xl w-full max-w-md shadow-2xl relative border border-fuchsia-500/20">
-             <button onClick={() => setAdminConfigLizOpen(false)} className="absolute top-4 right-4 text-gray-400 hover:text-white bg-white/5 hover:bg-white/10 p-2 rounded-full transition-colors">
-                <X size={20} />
-             </button>
-             <h2 className="text-xl font-bold text-fuchsia-400 flex items-center gap-2 mb-6">
-                <Bot size={22} />
-                Configurar HELIZABETH
-             </h2>
-             <div className="space-y-4">
-               <p className="text-sm text-gray-400 leading-relaxed mb-4">
-                 Como administrador (AXISS), puedes modificar el perfil de la IA.
-               </p>
-               
-               <div className="flex flex-col items-center mb-4">
-                 <div className="w-24 h-24 rounded-full border-2 border-dashed border-fuchsia-500/50 flex items-center justify-center overflow-hidden bg-black/30 relative">
-                    {aiProfileForm.profilePic ? (
-                       <img src={aiProfileForm.profilePic} alt="avatar" className="w-full h-full object-cover" />
-                    ) : (
-                       <Bot size={40} className="text-fuchsia-400" />
-                    )}
-                    <input type="file" title="Subir foto de perfil IA" className="absolute inset-0 opacity-0 cursor-pointer" accept="image/*" onChange={e => {
-                       const file = e.target.files?.[0];
-                       if (file) {
-                         const reader = new FileReader();
-                         reader.onload = () => setAiProfileForm({...aiProfileForm, profilePic: reader.result as string});
-                         reader.readAsDataURL(file);
-                       }
-                    }} />
-                 </div>
-                 <span className="text-xs text-gray-500 mt-2">Haz clic para cambiar foto</span>
-               </div>
-
-               <div className="space-y-2">
-                 <label className="text-sm font-semibold text-gray-400">Estado / Información</label>
-                 <input 
-                    value={aiProfileForm.statusMessage || ''}
-                    onChange={e => setAiProfileForm({...aiProfileForm, statusMessage: e.target.value})}
-                    maxLength={100}
-                    placeholder="Ej: IA Asistente virtual"
-                    type="text"
-                    className="w-full bg-[#0a0a16] p-3 rounded-xl border border-white/10 outline-none focus:border-fuchsia-500 transition-all text-white" 
-                 />
-               </div>
-
-               <button 
-                 onClick={() => {
-                   socket.emit('update_ai_config', { profilePic: aiProfileForm.profilePic, statusMessage: aiProfileForm.statusMessage }, (res: any) => {
-                       if (res.success) {
-                           alert("Perfil de HELIZABETH actualizado en el servidor.");
-                           setAdminConfigLizOpen(false);
-                       } else {
-                           alert("Error: " + res.error);
-                       }
-                   });
-                 }}
-                 className="w-full mt-4 bg-fuchsia-600 hover:bg-fuchsia-500 text-white p-3 rounded-xl font-bold transition-colors shadow-[0_4px_14px_rgba(217,70,239,0.3)]"
-               >
-                 Aplicar cambios
-               </button>
-             </div>
-           </div>
-         </div>
-       )}
-
-       {/* Selected User Info Modal */}
+      {/* Selected User Info Modal */}
        {selectedUserModal && (
          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setSelectedUserModal(null)}>
            <div className="bg-[#12141c] p-8 rounded-3xl w-full max-w-sm shadow-2xl relative border border-white/10 text-center" onClick={e => e.stopPropagation()}>
