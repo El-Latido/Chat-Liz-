@@ -3,7 +3,7 @@ import {
   Send, User, MessageCircle, Settings, Bot, 
   Image as ImageIcon, Mic, StopCircle, 
   Menu, X, Hash, MessageSquare, LogOut, Search,
-  Paperclip, Smile, Lock, EyeOff
+  Paperclip, Smile, Lock, EyeOff, Globe
 } from 'lucide-react';
 import { socket } from './socket';
 
@@ -126,6 +126,17 @@ function MainApp() {
       const elizabeth = usersList.find(u => u.username === 'Elizabeth') || { username: 'Elizabeth', statusMessage: 'IA Asistente virtual', role: 'admin' };
       cleaned.unshift(elizabeth); 
       setUsersOnline(cleaned);
+
+      const me = usersList.find(u => u.username === user.username);
+      if (me) {
+         setUser(prev => ({
+             ...prev,
+             profilePic: me.profilePic,
+             statusMessage: me.statusMessage,
+             countryLanguage: me.countryLanguage,
+             role: me.role
+         }));
+      }
     });
 
     return () => {
@@ -472,6 +483,13 @@ function MainApp() {
          </div>
 
          <div className="flex items-center gap-4">
+             <button 
+                onClick={() => setActiveChat('global')}
+                className={`flex items-center gap-2 px-4 py-2 rounded-xl border transition-all ${activeChat === 'global' ? 'bg-cyan-500/20 border-cyan-500/50 text-cyan-400' : 'bg-[#13151f] border-white/10 text-gray-400 hover:text-white hover:border-white/30'} shadow-[0_4px_10px_rgba(0,0,0,0.5)]`}
+             >
+                <Globe size={20} />
+                <span className="font-bold text-sm hidden sm:inline">Mundo</span>
+             </button>
              <div className="flex items-center gap-3 bg-[#13151f] border border-white/10 px-4 py-1.5 rounded-full shadow-[0_4px_10px_rgba(0,0,0,0.5)]">
                  <div className="w-7 h-7 rounded-full bg-gradient-to-br from-gray-700 to-gray-800 flex items-center justify-center text-xs font-bold border border-white/5 overflow-hidden">
                     <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${user.username}`} alt="avatar" className="w-full h-full object-cover" />
@@ -607,7 +625,7 @@ function MainApp() {
                                {isLiz ? `"${m.text}"` : m.text}
                             </span>
                             {m.image && <div className="mt-3 ml-2"><img src={m.image} className="rounded-xl border border-white/10 max-w-[300px] shadow-lg" alt="adjunto"/></div>}
-                            {m.audio && <div className="mt-3 ml-2 bg-[#13151f] p-2 rounded-xl inline-block border border-white/5 shadow-inner"><audio src={m.audio} controls className="h-8 max-w-[250px] filter opacity-90" /></div>}
+                            {(m.type === 'audio' || m.audio) && <div className="mt-3 ml-2 bg-[#13151f] p-2 rounded-xl inline-block border border-white/5 shadow-inner"><audio src={m.audio} controls className="h-8 max-w-[250px] filter opacity-90" /></div>}
                          </div>
                      );
                   })}
@@ -741,7 +759,7 @@ function MainApp() {
                 </div>
               </div>
               
-              {user.role === 'admin' && (
+              {user.username === 'AXISS' && (
                  <button onClick={() => { 
                     const aiUser = usersOnline.find(u => u.username === 'Elizabeth');
                     setAiProfileForm({ profilePic: aiUser?.profilePic || '', statusMessage: aiUser?.statusMessage || 'IA Asistente virtual' });

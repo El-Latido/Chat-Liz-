@@ -5,6 +5,7 @@ import { Server } from "socket.io";
 import { createServer as createViteServer } from "vite";
 import { initializeApp } from "firebase/app";
 import { getFirestore, collection, doc, getDoc, setDoc, updateDoc, deleteDoc, getDocs, addDoc, query, orderBy, limitToLast, limit, serverTimestamp, getCountFromServer, onSnapshot } from "firebase/firestore";
+import { getStorage, ref, uploadString, getDownloadURL } from "firebase/storage";
 import fs from "fs";
 import { GoogleGenAI } from "@google/genai";
 import dotenv from "dotenv";
@@ -22,12 +23,14 @@ const ai = new GoogleGenAI({
 
 // Firebase Setup
 let fdb: any = null;
+let fStorage: any = null;
 try {
   const configPath = path.join(process.cwd(), "firebase-applet-config.json");
   if (fs.existsSync(configPath)) {
     const firebaseConfig = JSON.parse(fs.readFileSync(configPath, "utf8"));
     const appInfo = initializeApp(firebaseConfig);
     fdb = getFirestore(appInfo, firebaseConfig.firestoreDatabaseId || undefined);
+    fStorage = getStorage(appInfo);
     console.log("Firebase initialized");
   }
 } catch(e) {
@@ -337,6 +340,20 @@ async function startServer() {
       msg.sender = currentUsername;
       msg.id = Date.now().toString();
 
+      if (msg.audio && msg.audio.startsWith('data:audio') && fStorage) {
+         try {
+             const audioRef = ref(fStorage, `audios/${Date.now()}_${currentUsername}.wav`);
+             await uploadString(audioRef, msg.audio, 'data_url');
+             const downloadUrl = await getDownloadURL(audioRef);
+             msg.audio = downloadUrl;
+             msg.type = 'audio';
+         } catch (e) {
+             console.error("Audio upload error", e);
+         }
+      } else if (msg.audio) {
+         msg.type = 'audio';
+      }
+
       if (fdb) {
         let dbMsg: any = { ...msg, createdAt: serverTimestamp() };
         await addDoc(collection(fdb, 'messages'), dbMsg);
@@ -465,6 +482,20 @@ async function startServer() {
       if (!currentUsername) return;
       msg.sender = currentUsername;
       msg.id = Date.now().toString();
+
+      if (msg.audio && msg.audio.startsWith('data:audio') && fStorage) {
+         try {
+             const audioRef = ref(fStorage, `audios/${Date.now()}_${currentUsername}.wav`);
+             await uploadString(audioRef, msg.audio, 'data_url');
+             const downloadUrl = await getDownloadURL(audioRef);
+             msg.audio = downloadUrl;
+             msg.type = 'audio';
+         } catch (e) {
+             console.error("Audio upload error", e);
+         }
+      } else if (msg.audio) {
+         msg.type = 'audio';
+      }
       
       const targetUser = activeUsers[toUser];
       
