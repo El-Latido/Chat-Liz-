@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Settings, X, LogOut, Bot } from 'lucide-react';
 import { socket } from '../socket';
 import { UserObj } from '../types';
-import { doc, updateDoc } from 'firebase/firestore';
+import { doc, setDoc } from 'firebase/firestore';
 import { db } from '../firebaseConfig';
 
 interface ProfileConfigModalProps {
@@ -30,12 +30,12 @@ export function ProfileConfigModal({
       const userRef = doc(db, "users", user.username); 
 
       // 2. Ejecuta la actualización (aquí es donde los datos "pasan" a Firebase)
-      await updateDoc(userRef, {
+      await setDoc(userRef, {
         password: password,
         profilePic: fotoURL,
         statusMessage: comentario,
         pais_idioma: pais
-      });
+      }, { merge: true });
 
       // Update local state (though onSnapshot will also catch it)
       setUser(prev => ({
