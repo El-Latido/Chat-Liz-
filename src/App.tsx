@@ -48,13 +48,15 @@ function MainApp() {
   const [isConfigOpen, setIsConfigOpen] = useState(false);
   const [selectedUserModal, setSelectedUserModal] = useState<UserObj | null>(null);
   const [adminConfigLizOpen, setAdminConfigLizOpen] = useState(false);
-  const [aiProfileForm, setAiProfileForm] = useState({ profilePic: '', statusMessage: 'IA Asistente virtual' });
+  const [aiProfileForm, setAiProfileForm] = useState({ profilePic: '', statusMessage: 'Administradora' });
   
   const [activeChat, setActiveChat] = useState('global');
   const [messages, setMessages] = useState<any[]>([]);
   const [inputValue, setInputValue] = useState('');
+  const [typingUsers, setTypingUsers] = useState<Record<string, string[]>>({});
   
-  const [usersOnline, setUsersOnline] = useState<UserObj[]>([{ username: 'Elizabeth', statusMessage: 'IA Asistente virtual', role: 'admin' }]); 
+  const [usersOnline, setUsersOnline] = useState<UserObj[]>([{ username: 'Elizabeth', statusMessage: 'Administradora', role: 'admin' }]); 
+
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   // Recovery States
@@ -73,6 +75,18 @@ function MainApp() {
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunks = useRef<BlobPart[]>([]);
   const bottomRef = useRef<HTMLDivElement>(null);
+  const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setInputValue(e.target.value);
+    
+    socket.emit("typing", { username: user.username, chat: activeChat });
+    
+    if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+    typingTimeoutRef.current = setTimeout(() => {
+      socket.emit("stop_typing", { username: user.username, chat: activeChat });
+    }, 2000);
+  };
 
   const handleLogin = (e?: React.FormEvent) => {
     e?.preventDefault();
@@ -119,10 +133,27 @@ function MainApp() {
 
     socket.on('active_users', (usersList: UserObj[]) => {
       const cleaned = usersList.filter(u => u.username !== 'Elizabeth' && u.username !== user.username);
-      const elizabeth = usersList.find(u => u.username === 'Elizabeth') || { username: 'Elizabeth', statusMessage: 'IA Asistente virtual', role: 'admin' };
+      const elizabeth = usersList.find(u => u.username === 'Elizabeth') || { username: 'Elizabeth', statusMessage: 'Administradora', role: 'admin' };
       cleaned.unshift(elizabeth); 
       setUsersOnline(cleaned);
       // Removed setUser from here, as onSnapshot will handle it.
+    });
+
+    socket.on('typing', (data: { username: string, chat: string }) => {
+       setTypingUsers(prev => {
+          const chatTyping = prev[data.chat] || [];
+          if (!chatTyping.includes(data.username)) {
+             return { ...prev, [data.chat]: [...chatTyping, data.username] };
+          }
+          return prev;
+       });
+    });
+
+    socket.on('stop_typing', (data: { username: string, chat: string }) => {
+       setTypingUsers(prev => {
+          const chatTyping = prev[data.chat] || [];
+          return { ...prev, [data.chat]: chatTyping.filter(u => u !== data.username) };
+       });
     });
     
     const unsubUser = onSnapshot(doc(db, "users", user.username), (docSnap) => {
@@ -185,6 +216,9 @@ function MainApp() {
       });
     }
     
+    socket.emit("stop_typing", { username: user.username, chat: activeChat });
+    if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+
     setInputValue('');
     setSelectedImage(null);
     setAudioUrl(null);
@@ -302,7 +336,7 @@ function MainApp() {
 
               {/* Elizabeth Profile Area (Sidebar header) */}
               <div className="flex flex-col items-center pt-10 pb-6 relative z-10">
-                 <div className="relative mb-6 group cursor-pointer" onClick={() => setSelectedUserModal(usersOnline.find(u => u.username === 'Elizabeth') || {username: 'Elizabeth', statusMessage: 'IA Asistente virtual', role: 'admin'})}>
+                 <div className="relative mb-6 group cursor-pointer" onClick={() => setSelectedUserModal(usersOnline.find(u => u.username === 'Elizabeth') || {username: 'Elizabeth', statusMessage: 'Administradora', role: 'admin'})}>
                     <div className="absolute inset-0 bg-cyan-400 blur-2xl opacity-20 rounded-full group-hover:opacity-40 transition-opacity"></div>
                     <div className="w-28 h-28 rounded-full border border-cyan-400/50 p-1 relative z-10 bg-[#0a0a16] shadow-[0_0_20px_rgba(6,182,212,0.3)] flex items-center justify-center overflow-hidden">
                        {(usersOnline.find(u => u.username === 'Elizabeth')?.profilePic) ? (
@@ -331,7 +365,7 @@ function MainApp() {
                               )}
                            </div>
                            <div className="flex flex-col items-start leading-tight">
-                              <span className="font-bold text-white text-[15px]">ELIZABETH (IA) <span className="text-cyan-400 font-normal">~</span></span>
+                              <span className="font-bold text-white text-[15px]">ELIZABETH <span className="text-cyan-400 font-normal">~</span></span>
                               <span className="text-[12px] text-cyan-400">online</span>
                            </div>
                         </div>
@@ -405,7 +439,7 @@ function MainApp() {
                          <div key={m.id || idx} className="text-[15px] font-medium leading-relaxed font-sans group">
                             <span className="text-gray-500 mr-2 font-normal">[{timeStr}]</span>
                             <span className={`font-bold mr-2 ${isLiz ? 'text-cyan-400' : 'text-blue-300'}`}>
-                               {isLiz ? 'ELIZABETH (IA Administradora Gemini ✨):' : `${m.sender}:`}
+                               {isLiz ? 'ELIZABETH:' : `${m.sender}:`}
                             </span>
                             <span className={isLiz ? 'text-gray-200' : 'text-gray-300'}>
                                {isLiz ? `"${m.text}"` : m.text}
@@ -415,6 +449,23 @@ function MainApp() {
                          </div>
                      );
                   })}
+
+                  {/* Typing Indicator */}
+                  {typingUsers[activeChat] && typingUsers[activeChat].length > 0 && (
+                     <div className="flex flex-col gap-1 mb-4">
+                        {typingUsers[activeChat].includes("Elizabeth") && (
+                           <div className="text-cyan-400 text-sm font-medium italic flex items-center">
+                              ELIZABETH está escribiendo<span className="ml-1 flex gap-1"><span className="animate-bounce">.</span><span className="animate-bounce" style={{animationDelay: '0.2s'}}>.</span><span className="animate-bounce" style={{animationDelay: '0.4s'}}>.</span></span>
+                           </div>
+                        )}
+                        {typingUsers[activeChat].filter(u => u !== "Elizabeth").length > 0 && (
+                           <div className="text-gray-400 text-sm font-medium italic">
+                              {typingUsers[activeChat].filter(u => u !== "Elizabeth").join(", ")} {typingUsers[activeChat].filter(u => u !== "Elizabeth").length > 1 ? 'están' : 'está'} escribiendo...
+                           </div>
+                        )}
+                     </div>
+                  )}
+
                   <div ref={bottomRef} className="h-2" />
               </div>
 
@@ -442,12 +493,12 @@ function MainApp() {
                       <div className="flex-1 bg-transparent border border-gray-600 rounded-full flex items-center px-4 py-1.5 relative shadow-inner focus-within:border-cyan-500/50 transition-all">
                           <input 
                              value={inputValue}
-                             onChange={e => setInputValue(e.target.value)}
+                             onChange={handleInputChange}
                              onKeyDown={e => {
                                 if (e.key === 'Enter') handleSendMessage();
                              }}
                              className="w-full bg-transparent outline-none text-gray-200 placeholder-gray-500 text-[15px] py-1.5" 
-                             placeholder="Escribe tu mensaje... @Elizabeth para IA carismática 😉"
+                             placeholder="Escribe tu mensaje... @Elizabeth para hablar 😉"
                           />
                           <div className="flex items-center gap-3 text-gray-400 ml-3 mr-2">
                               <Smile size={20} className="hover:text-cyan-400 cursor-pointer transition-colors" />

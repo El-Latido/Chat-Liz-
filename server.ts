@@ -58,7 +58,7 @@ async function startServer() {
   let activeUsers: Record<string, { socketId: string; status: string; username: string; profilePic?: string; statusMessage?: string; role?: string }> = {};
   const bannedUsers: Record<string, number> = {};
 
-  let aiUserTempCache: any = { username: "Elizabeth", profilePic: "", statusMessage: "IA Asistente virtual", role: "admin" };
+  let aiUserTempCache: any = { username: "Elizabeth", profilePic: "", statusMessage: "Administradora", role: "admin" };
   const loadAiUser = async () => {
      if (fdb) {
          try {
@@ -299,7 +299,7 @@ async function startServer() {
       const aiUsername = "Elizabeth";
       const { profilePic, statusMessage } = data;
       const safeProfilePic = profilePic || "";
-      const safeStatusMessage = statusMessage || "IA Asistente virtual";
+      const safeStatusMessage = statusMessage || "Administradora";
 
       if (fdb) {
          await updateAiProfileInFirebase(aiUsername, { profilePic: safeProfilePic, statusMessage: safeStatusMessage });
@@ -332,6 +332,16 @@ async function startServer() {
       } else {
         callback(fallbackState.globalMessages);
       }
+    });
+
+    socket.on("typing", (data) => {
+      // data: { username: string, chat: string }
+      socket.broadcast.emit("typing", data);
+    });
+
+    socket.on("stop_typing", (data) => {
+      // data: { username: string, chat: string }
+      socket.broadcast.emit("stop_typing", data);
     });
 
     socket.on("send_global", async (msg) => {
@@ -451,6 +461,8 @@ Privacidad Absoluta: NUNCA revelarás contraseñas de usuarios ni datos del admi
 Tareas Avanzadas: Eres experta analizando imágenes, audios, programando código, resolviendo problemas y dando soporte técnico. Si te pasan una foto o código, descríbela y bromea o ayuda según corresponda.
 Regla final: NO incluyas prefijos como 'Elizabeth:' al inicio de tu mensaje.`;
 
+          io.emit("typing", { username: "Elizabeth", chat: "global" });
+
           const response = await ai.models.generateContent({
             model: "gemini-2.5-flash",
             contents: parts,
@@ -460,41 +472,48 @@ Regla final: NO incluyas prefijos como 'Elizabeth:' al inicio de tu mensaje.`;
           });
           const rawText = response.text || "";
           const cleanText = rawText.replace(/^Elizabeth:\s*/i, '').trim();
-          const eliMsg: any = { text: cleanText, sender: "Elizabeth", id: Date.now().toString() };
           
-          if (fdb) {
-            eliMsg.createdAt = serverTimestamp();
-            await addDoc(collection(fdb, 'messages'), eliMsg);
-          } else {
-            fallbackState.globalMessages.push(eliMsg);
-            saveFallbackDB();
-          }
-          
-          const eliSenderLanguage = 'es';
-          const eliTranslationCache = new Map<string, string>();
+          const wordCount = cleanText.split(/\s+/).length;
+          const typingDelay = Math.min(Math.max(wordCount * 120, 2000), 6000);
 
-          for (const [uname, userData] of Object.entries(activeUsers)) {
-             const receiverLanguage = userData.pais_idioma || 'es';
-             let finalMsgText = eliMsg.text;
+          setTimeout(async () => {
+              io.emit("stop_typing", { username: "Elizabeth", chat: "global" });
+              const eliMsg: any = { text: cleanText, sender: "Elizabeth", id: Date.now().toString() };
+              
+              if (fdb) {
+                eliMsg.createdAt = serverTimestamp();
+                await addDoc(collection(fdb, 'messages'), eliMsg);
+              } else {
+                fallbackState.globalMessages.push(eliMsg);
+                saveFallbackDB();
+              }
+              
+              const eliSenderLanguage = 'es';
+              const eliTranslationCache = new Map<string, string>();
 
-             if (eliMsg.text && eliSenderLanguage !== receiverLanguage) {
-                if (eliTranslationCache.has(receiverLanguage)) {
-                   finalMsgText = eliTranslationCache.get(receiverLanguage);
-                } else {
-                   try {
-                      const resp = await ai.models.generateContent({
-                         model: "gemini-2.5-flash",
-                         contents: `Traduce el siguiente texto de un chat (escrito originalmente en el idioma/país: ${eliSenderLanguage}) al idioma correspondiente de: ${receiverLanguage}. Solo devuelve la traducción directa, sin comillas adicionales.\n\nTexto:\n${eliMsg.text}`,
-                      });
-                      finalMsgText = resp.text || eliMsg.text;
-                      eliTranslationCache.set(receiverLanguage, finalMsgText as string);
-                   } catch (e) {
-                      finalMsgText = eliMsg.text;
-                   }
-                }
-             }
-             io.to(userData.socketId).emit("receive_global", { ...eliMsg, text: finalMsgText });
-          }
+              for (const [uname, userData] of Object.entries(activeUsers)) {
+                 const receiverLanguage = userData.pais_idioma || 'es';
+                 let finalMsgText = eliMsg.text;
+
+                 if (eliMsg.text && eliSenderLanguage !== receiverLanguage) {
+                    if (eliTranslationCache.has(receiverLanguage)) {
+                       finalMsgText = eliTranslationCache.get(receiverLanguage);
+                    } else {
+                       try {
+                          const resp = await ai.models.generateContent({
+                             model: "gemini-2.5-flash",
+                             contents: `Traduce el siguiente texto de un chat (escrito originalmente en el idioma/país: ${eliSenderLanguage}) al idioma correspondiente de: ${receiverLanguage}. Solo devuelve la traducción directa, sin comillas adicionales.\n\nTexto:\n${eliMsg.text}`,
+                          });
+                          finalMsgText = resp.text || eliMsg.text;
+                          eliTranslationCache.set(receiverLanguage, finalMsgText as string);
+                       } catch (e) {
+                          finalMsgText = eliMsg.text;
+                       }
+                    }
+                 }
+                 io.to(userData.socketId).emit("receive_global", { ...eliMsg, text: finalMsgText });
+              }
+          }, typingDelay);
         } catch (e) {
           console.error("Gemini Error:", e);
         }
