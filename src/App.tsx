@@ -5,7 +5,7 @@ import {
   Menu, X, Hash, MessageSquare, LogOut, Search,
   Paperclip, Smile, Globe
 } from 'lucide-react';
-import { collection, onSnapshot, query } from 'firebase/firestore';
+import { collection, onSnapshot, query, doc } from 'firebase/firestore';
 import { db } from './firebaseConfig';
 import { socket } from './socket';
 import { UserObj, MessageObj } from './types';
@@ -125,16 +125,26 @@ function MainApp() {
       // Removed setUser from here, as onSnapshot will handle it.
     });
     
-    const unsubscribe = onSnapshot(query(collection(db, "users")), (snapshot) => {
+    const unsubUser = onSnapshot(doc(db, "users", user.username), (docSnap) => {
+        if (docSnap.exists()) {
+            const updatedUser = docSnap.data() as UserObj;
+            setUser(prev => ({ ...prev, ...updatedUser }));
+            
+            // También actualizamos nuestra info en usersOnline
+            setUsersOnline(prevOnline => {
+                const exists = prevOnline.find(u => u.username === user.username);
+                if (exists) {
+                    return prevOnline.map(u => u.username === user.username ? { ...u, ...updatedUser } : u);
+                }
+                return prevOnline;
+            });
+        }
+    });
+
+    const unsubscribe = onSnapshot(collection(db, "users"), (snapshot) => {
         snapshot.docChanges().forEach((change) => {
             if (change.type === "modified" || change.type === "added") {
                 const updatedUser = change.doc.data() as UserObj;
-                if (updatedUser.username === user.username) {
-                    setUser(prev => ({
-                        ...prev,
-                        ...updatedUser
-                    }));
-                }
                 setUsersOnline(prevOnline => {
                     const exists = prevOnline.find(u => u.username === updatedUser.username);
                     if (exists) {
@@ -151,6 +161,7 @@ function MainApp() {
       socket.off('receive_private');
       socket.off('active_users');
       unsubscribe();
+      unsubUser();
     };
   }, [isLoggedIn, activeChat, user.username]);
 
@@ -267,7 +278,7 @@ function MainApp() {
              </button>
              <div className="flex items-center gap-3 bg-[#13151f] border border-white/10 px-4 py-1.5 rounded-full shadow-[0_4px_10px_rgba(0,0,0,0.5)]">
                  <div className="w-7 h-7 rounded-full bg-gradient-to-br from-gray-700 to-gray-800 flex items-center justify-center text-xs font-bold border border-white/5 overflow-hidden">
-                    <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${user.username}`} alt="avatar" className="w-full h-full object-cover" />
+                    <img src={user.profilePic || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.username}`} alt="avatar" className="w-full h-full object-cover" />
                  </div>
                  <span className="font-medium text-gray-200 text-sm tracking-wide">{user.username}</span>
              </div>
