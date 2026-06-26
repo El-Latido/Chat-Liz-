@@ -24,23 +24,26 @@ export function AdminConfigLizModal({ setAdminConfigLizOpen, aiProfileForm, setA
              Como administrador (AXISS), puedes modificar el perfil de la IA.
            </p>
            
-           <div className="flex flex-col items-center mb-4">
-             <div className="w-24 h-24 rounded-full border-2 border-dashed border-fuchsia-500/50 flex items-center justify-center overflow-hidden bg-black/30 relative">
-                {aiProfileForm.profilePic ? (
-                   <img src={aiProfileForm.profilePic} alt="avatar" className="w-full h-full object-cover" />
-                ) : (
-                   <Bot size={40} className="text-fuchsia-400" />
-                )}
-                <input type="file" title="Subir foto de perfil IA" className="absolute inset-0 opacity-0 cursor-pointer" accept="image/*" onChange={e => {
-                   const file = e.target.files?.[0];
-                   if (file) {
-                     const reader = new FileReader();
-                     reader.onload = () => setAiProfileForm({...aiProfileForm, profilePic: reader.result as string});
-                     reader.readAsDataURL(file);
-                   }
-                }} />
+           <div className="flex flex-col items-center mb-6">
+             <div className="relative group cursor-pointer">
+                <div className="absolute inset-0 bg-cyan-400 blur-2xl opacity-20 rounded-full group-hover:opacity-40 transition-opacity"></div>
+                <div className="w-28 h-28 rounded-full border border-cyan-400/50 p-1 relative z-10 bg-[#0a0a16] shadow-[0_0_20px_rgba(6,182,212,0.3)] flex items-center justify-center overflow-hidden [clip-path:polygon(50%_0%,100%_25%,100%_75%,50%_100%,0%_75%,0%_25%)]">
+                   {aiProfileForm.profilePic ? (
+                      <img src={aiProfileForm.profilePic} alt="avatar" className="w-full h-full object-cover rounded-full" />
+                   ) : (
+                      <Bot size={40} className="text-cyan-400" />
+                   )}
+                   <input type="file" title="Subir foto de perfil IA" className="absolute inset-0 opacity-0 cursor-pointer z-20" accept="image/*" onChange={e => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        const reader = new FileReader();
+                        reader.onload = () => setAiProfileForm({...aiProfileForm, profilePic: reader.result as string});
+                        reader.readAsDataURL(file);
+                      }
+                   }} />
+                </div>
              </div>
-             <span className="text-xs text-gray-500 mt-2">Haz clic para cambiar foto</span>
+             <span className="text-xs text-gray-500 mt-3 font-semibold uppercase tracking-wider">Haz clic para cambiar foto</span>
            </div>
 
            <div className="space-y-2">

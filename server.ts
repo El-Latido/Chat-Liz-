@@ -55,6 +55,12 @@ async function startServer() {
 
   app.use(express.json({ limit: "50mb" }));
 
+  const uploadsDir = path.join(process.cwd(), "uploads");
+  if (!fs.existsSync(uploadsDir)) {
+    fs.mkdirSync(uploadsDir, { recursive: true });
+  }
+  app.use('/uploads', express.static(uploadsDir));
+
   let activeUsers: Record<string, { socketId: string; status: string; username: string; profilePic?: string; statusMessage?: string; role?: string; pais_idioma?: string; timezone?: string }> = {};
   const bannedUsers: Record<string, number> = {};
 
@@ -316,8 +322,21 @@ async function startServer() {
 
       const aiUsername = "Elizabeth";
       const { profilePic, statusMessage } = data;
-      const safeProfilePic = profilePic || "";
+      let safeProfilePic = profilePic || "";
       const safeStatusMessage = statusMessage || "Administradora";
+
+      if (safeProfilePic.startsWith('data:image')) {
+          try {
+             const base64Data = safeProfilePic.split(',')[1];
+             const ext = safeProfilePic.match(/data:image\/(.*?);/)?.[1] || 'png';
+             const filename = `elizabeth_${Date.now()}.${ext}`;
+             const filepath = path.join(process.cwd(), "uploads", filename);
+             fs.writeFileSync(filepath, Buffer.from(base64Data, 'base64'));
+             safeProfilePic = `/uploads/${filename}`;
+          } catch(e) {
+             console.error("Error saving Elizabeth avatar", e);
+          }
+      }
 
       if (fdb) {
          await updateAiProfileInFirebase(aiUsername, { profilePic: safeProfilePic, statusMessage: safeStatusMessage });
