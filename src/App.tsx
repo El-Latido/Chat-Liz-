@@ -122,7 +122,10 @@ function MainApp() {
     
     socket.on('receive_global', (msg: any) => {
       if (activeChat === 'global') {
-          setMessages(prev => [...prev, msg]);
+          setMessages(prev => {
+             if (prev.some(m => m.id === msg.id)) return prev;
+             return [...prev, msg];
+          });
           setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
       }
     });
@@ -212,19 +215,29 @@ function MainApp() {
   const handleSendMessage = () => {
     if (!inputValue.trim() && !selectedImage && !audioUrl) return;
     
-    const payload: any = { text: inputValue };
+    const msgId = Date.now().toString() + Math.random().toString(36).substr(2, 5);
+    const payload: any = { text: inputValue, id: msgId };
     if (selectedImage) payload.image = selectedImage;
     if (audioUrl) payload.audio = audioUrl;
 
     if (activeChat === 'global') {
+      const optimisticMsg = { ...payload, sender: user.username, createdAt: Date.now() };
+      setMessages(prev => [...prev, optimisticMsg]);
+      setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
       socket.emit('send_global', payload);
     } else {
+      const optimisticMsg = { ...payload, sender: user.username, createdAt: Date.now() };
+      setMessages(prev => [...prev, optimisticMsg]);
+      setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
+      
       socket.emit('send_private', payload, activeChat, (res: any) => {
-         if (res.success) {
-            setMessages(prev => [...prev, res.msg]);
-            setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
-         } else {
+         if (!res.success) {
+            // Remove optimistic message if failed
+            setMessages(prev => prev.filter(m => m.id !== msgId));
             alert(res.error || "No se pudo enviar");
+         } else {
+            // Replace optimistic with real msg to get accurate timestamp and properties
+            setMessages(prev => prev.map(m => m.id === msgId ? res.msg : m));
          }
       });
     }
@@ -232,6 +245,7 @@ function MainApp() {
     socket.emit("stop_typing", { username: user.username, chat: activeChat });
     if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
 
+    // Limpieza inmediata del input para evitar sensación de "congelamiento"
     setInputValue('');
     setSelectedImage(null);
     setAudioUrl(null);

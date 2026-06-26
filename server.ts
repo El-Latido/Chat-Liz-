@@ -393,7 +393,7 @@ async function startServer() {
       }
 
       msg.sender = currentUsername;
-      msg.id = Date.now().toString();
+      msg.id = msg.id || Date.now().toString();
 
       // Content Filter
       try {
@@ -520,7 +520,7 @@ Regla final: NO incluyas prefijos como 'Elizabeth:' al inicio de tu mensaje.`;
           const cleanText = rawText.replace(/^Elizabeth:\s*/i, '').trim();
           
           const wordCount = cleanText.split(/\s+/).length;
-          const typingDelay = Math.min(Math.max(wordCount * 120, 2000), 4000); // Max 4 seconds as requested
+          const typingDelay = Math.min(Math.max(wordCount * 120, 1000), 3000); // Max 3 seconds as requested
           
           await new Promise(resolve => setTimeout(resolve, typingDelay));
 
@@ -592,7 +592,7 @@ Regla final: NO incluyas prefijos como 'Elizabeth:' al inicio de tu mensaje.`;
       }
 
       msg.sender = currentUsername;
-      msg.id = Date.now().toString();
+      msg.id = msg.id || Date.now().toString();
 
       // Content Filter
       try {
@@ -710,7 +710,7 @@ Regla final: NO incluyas prefijos como 'Elizabeth:' al inicio de tu mensaje.`;
           const cleanText = rawText.replace(/^Elizabeth:\s*/i, '').trim();
           
           const wordCount = cleanText.split(/\s+/).length;
-          const typingDelay = Math.min(Math.max(wordCount * 120, 2000), 4000); // Max 4 seconds as requested
+          const typingDelay = Math.min(Math.max(wordCount * 120, 1000), 3000); // Max 3 seconds as requested
           
           await new Promise(resolve => setTimeout(resolve, typingDelay));
 
