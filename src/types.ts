@@ -6,6 +6,7 @@ export interface UserObj {
   countryLanguage?: string;
   securityEmail?: string;
   timezone?: string;
+  systemInstruction?: string;
 }
 
 export interface MessageObj {

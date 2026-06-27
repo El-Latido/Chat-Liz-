@@ -3,8 +3,9 @@ import {
   Send, User, MessageCircle, Settings, Bot, 
   Image as ImageIcon, Mic, StopCircle, 
   Menu, X, Hash, MessageSquare, LogOut, Search,
-  Paperclip, Smile, Globe
+  Paperclip, Smile, Globe, Box
 } from 'lucide-react';
+import VRRoom from './components/VRRoom';
 import { collection, onSnapshot, query, doc } from 'firebase/firestore';
 import { db } from './firebaseConfig';
 import { socket } from './socket';
@@ -337,6 +338,13 @@ function MainApp() {
                 <Globe size={20} />
                 <span className="font-bold text-sm hidden sm:inline">Mundo</span>
              </button>
+             <button 
+                onClick={() => setActiveChat('vr')}
+                className={`flex items-center gap-2 px-4 py-2 rounded-xl border transition-all ${activeChat === 'vr' ? 'bg-purple-500/20 border-purple-500/50 text-purple-400' : 'bg-[#13151f] border-white/10 text-gray-400 hover:text-white hover:border-white/30'} shadow-[0_4px_10px_rgba(0,0,0,0.5)]`}
+             >
+                <Box size={20} />
+                <span className="font-bold text-sm hidden sm:inline">Sala VR</span>
+             </button>
              <div className="flex items-center gap-3 bg-[#13151f] border border-white/10 px-4 py-1.5 rounded-full shadow-[0_4px_10px_rgba(0,0,0,0.5)]">
                  <div className="w-7 h-7 rounded-full bg-gradient-to-br from-gray-700 to-gray-800 flex items-center justify-center text-xs font-bold border border-white/5 overflow-hidden">
                     <img src={user.profilePic || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.username}`} alt="avatar" className="w-full h-full object-cover" />
@@ -448,6 +456,10 @@ function MainApp() {
               
               {/* Outer gradient border illusion via linear-gradient using a wrapper, but implemented directly on container above with box-shadow */}
               
+              {activeChat === 'vr' ? (
+                  <VRRoom socket={socket} user={user} />
+              ) : (
+                  <>
               {/* Chat Header */}
               <div className="flex items-center justify-between px-6 py-5 border-b border-white/5 bg-[#0f111a]/80 backdrop-blur-md z-10 shrink-0">
                   <div className="flex items-center gap-2">
@@ -559,6 +571,8 @@ function MainApp() {
                       </button>
                   </div>
               </div>
+              </>
+              )}
           </main>
       </div>
 

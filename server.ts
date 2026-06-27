@@ -62,6 +62,8 @@ async function startServer() {
   app.use('/uploads', express.static(uploadsDir));
 
   let activeUsers: Record<string, { socketId: string; status: string; username: string; profilePic?: string; statusMessage?: string; role?: string; pais_idioma?: string; timezone?: string }> = {};
+  let vrUsers: Record<string, { x: number, y: number, z: number, rx: number, ry: number, rz: number, action: string, skin?: string }> = {};
+
   const bannedUsers: Record<string, number> = {};
 
   let aiUserTempCache: any = { username: "Elizabeth", profilePic: "", statusMessage: "Administradora", role: "admin" };
@@ -726,10 +728,49 @@ Regla final: NO incluyas prefijos como 'Elizabeth:' al inicio de tu mensaje.`;
       }
     });
 
+    socket.on("vr_join", (data) => {
+      if (currentUsername) {
+        socket.join("vr_room");
+        vrUsers[currentUsername] = { x: 0, y: 1, z: 0, rx: 0, ry: 0, rz: 0, action: "Idle", skin: data?.skin || "" };
+        io.to("vr_room").emit("vr_users", vrUsers);
+      }
+    });
+
+    socket.on("vr_leave", () => {
+      if (currentUsername) {
+        socket.leave("vr_room");
+        delete vrUsers[currentUsername];
+        io.to("vr_room").emit("vr_users", vrUsers);
+      }
+    });
+
+    socket.on("vr_move", (data) => {
+      if (currentUsername && vrUsers[currentUsername]) {
+        vrUsers[currentUsername] = { ...vrUsers[currentUsername], ...data };
+        // Broadcas to others to save bandwidth
+        socket.to("vr_room").emit("vr_update", { username: currentUsername, ...vrUsers[currentUsername] });
+      }
+    });
+
+    socket.on("send_vr", (msg) => {
+      if (currentUsername) {
+         msg.sender = currentUsername;
+         msg.id = Date.now().toString();
+         msg.createdAt = Date.now();
+         io.to("vr_room").emit("receive_vr", msg);
+      }
+    });
+
     socket.on("disconnect", () => {
-      if (currentUsername && activeUsers[currentUsername]) {
-        delete activeUsers[currentUsername];
-        emitActiveUsers();
+      if (currentUsername) {
+        if (vrUsers[currentUsername]) {
+          delete vrUsers[currentUsername];
+          io.to("vr_room").emit("vr_users", vrUsers);
+        }
+        if (activeUsers[currentUsername]) {
+          delete activeUsers[currentUsername];
+          emitActiveUsers();
+        }
       }
     });
   });
