@@ -4,8 +4,8 @@ import { OrbitControls, Sky, Environment, Box, Capsule, Text, useGLTF } from '@r
 import * as THREE from 'three';
 
 const MapLoader = () => {
-  const map1 = useGLTF('/assets/mapa1/scene.gltf');
-  const map2 = useGLTF('/assets/mapa2/scene.gltf');
+  const map1 = useGLTF('/static/assets/mapa1/scene.gltf');
+  const map2 = useGLTF('/static/assets/mapa2/scene.gltf');
   
   // Apply a gentle sway animation to the whole environment as requested
   const ref = useRef<THREE.Group>(null);

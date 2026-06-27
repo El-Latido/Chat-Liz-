@@ -53,7 +53,8 @@ async function downloadModels() {
     { id: "b8784396e5f6424e88b036949164a473", name: "mapa2" }
   ];
 
-  const assetsDir = path.join(process.cwd(), "public", "assets");
+  const staticDir = path.join(process.cwd(), "static");
+  const assetsDir = path.join(staticDir, "assets");
   if (!fs.existsSync(assetsDir)) {
     fs.mkdirSync(assetsDir, { recursive: true });
   }
@@ -70,19 +71,21 @@ async function downloadModels() {
       const res = await axios.get(`https://api.sketchfab.com/v3/models/${model.id}/download`, {
         headers: { Authorization: `Token ${token}` }
       });
-      const gltfUrl = res.data.gltf.url;
-      
-      console.log(`[VR] Downloading ZIP for model ${model.name}...`);
-      const zipRes = await axios.get(gltfUrl, { responseType: "arraybuffer" });
-      
-      const zipPath = path.join(assetsDir, `${model.name}.zip`);
-      fs.writeFileSync(zipPath, zipRes.data);
-      
-      console.log(`[VR] Extracting ZIP for model ${model.name}...`);
-      const zip = new AdmZip(zipPath);
-      zip.extractAllTo(targetFolder, true);
-      fs.unlinkSync(zipPath);
-      console.log(`[VR] Model ${model.name} ready.`);
+      if (res.status === 200) {
+        const gltfUrl = res.data.gltf.url;
+        
+        console.log(`[VR] Downloading ZIP for model ${model.name}...`);
+        const zipRes = await axios.get(gltfUrl, { responseType: "arraybuffer" });
+        
+        const zipPath = path.join(assetsDir, `${model.name}.zip`);
+        fs.writeFileSync(zipPath, zipRes.data);
+        
+        console.log(`[VR] Extracting ZIP for model ${model.name}...`);
+        const zip = new AdmZip(zipPath);
+        zip.extractAllTo(targetFolder, true);
+        fs.unlinkSync(zipPath);
+        console.log(`[VR] Download success (200), extracted to: ${targetFolder}`);
+      }
     } catch (err: any) {
       console.error(`[VR] Error downloading model ${model.name}:`, err.message);
     }
@@ -103,6 +106,12 @@ async function startServer() {
   });
 
   app.use(express.json({ limit: "50mb" }));
+
+  const staticDir = path.join(process.cwd(), "static");
+  if (!fs.existsSync(staticDir)) {
+    fs.mkdirSync(staticDir, { recursive: true });
+  }
+  app.use('/static', express.static(staticDir));
 
   const uploadsDir = path.join(process.cwd(), "uploads");
   if (!fs.existsSync(uploadsDir)) {
