@@ -528,15 +528,38 @@ Regla final: NO incluyas prefijos como 'Elizabeth:' al inicio de tu mensaje.`;
 
           const sysInstruction = aiUserTempCache?.systemInstruction ? `${baseSysInstruction}\n\nInstrucciones adicionales del Administrador:\n${aiUserTempCache.systemInstruction}` : baseSysInstruction;
 
-          const response = await ai.models.generateContent({
-            model: "gemini-2.5-flash",
-            contents: parts,
-            config: {
-              systemInstruction: sysInstruction,
-            }
-          });
-          const rawText = response.text || "";
-          const cleanText = rawText.replace(/^Elizabeth:\s*/i, '').trim();
+          console.log("=== ENVIANDO A GEMINI ===");
+          console.log(JSON.stringify(parts, null, 2));
+          
+          let response: any;
+          try {
+             // Promise race to simulate a 30s timeout
+             const timeoutPromise = new Promise((_, reject) => 
+                setTimeout(() => reject(new Error("Timeout de 30 segundos alcanzado")), 30000)
+             );
+             const fetchPromise = ai.models.generateContent({
+               model: "gemini-2.5-flash",
+               contents: parts,
+               config: {
+                 systemInstruction: sysInstruction,
+               }
+             });
+             
+             response = await Promise.race([fetchPromise, timeoutPromise]);
+          } catch (apiError) {
+             console.error("=== ERROR API GEMINI ===", apiError);
+             response = { text: "" };
+          }
+          
+          console.log("=== RESPUESTA DE GEMINI ===");
+          console.log(response?.text);
+          
+          let rawText = response?.text || "";
+          let cleanText = rawText.replace(/^Elizabeth:\s*/i, '').trim();
+          
+          if (!cleanText) {
+             cleanText = "Lo siento, me distraje un momento, ¿qué decías?";
+          }
           
           const wordCount = cleanText.split(/\s+/).length;
           
@@ -721,14 +744,34 @@ Regla final: NO incluyas prefijos como 'Elizabeth:' al inicio de tu mensaje.`;
              parts.push({ inlineData: { data: base64Data, mimeType } });
           }
 
-          const response = await ai.models.generateContent({
-            model: "gemini-2.5-flash",
-            contents: parts,
-            config: { systemInstruction: sysInstruction }
-          });
+          console.log("=== ENVIANDO A GEMINI (PRIVADO) ===");
+          console.log(JSON.stringify(parts, null, 2));
+
+          let response: any;
+          try {
+             const timeoutPromise = new Promise((_, reject) => 
+                setTimeout(() => reject(new Error("Timeout de 30 segundos alcanzado")), 30000)
+             );
+             const fetchPromise = ai.models.generateContent({
+               model: "gemini-2.5-flash",
+               contents: parts,
+               config: { systemInstruction: sysInstruction }
+             });
+             response = await Promise.race([fetchPromise, timeoutPromise]);
+          } catch (apiError) {
+             console.error("=== ERROR API GEMINI (PRIVADO) ===", apiError);
+             response = { text: "" };
+          }
           
-          const rawText = response.text || "";
-          const cleanText = rawText.replace(/^Elizabeth:\s*/i, '').trim();
+          console.log("=== RESPUESTA DE GEMINI (PRIVADO) ===");
+          console.log(response?.text);
+          
+          let rawText = response?.text || "";
+          let cleanText = rawText.replace(/^Elizabeth:\s*/i, '').trim();
+
+          if (!cleanText) {
+             cleanText = "Lo siento, me distraje un momento, ¿qué decías?";
+          }
           
           const wordCount = cleanText.split(/\s+/).length;
           
