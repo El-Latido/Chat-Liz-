@@ -780,41 +780,133 @@ Regla final: NO incluyas prefijos como 'Elizabeth:' al inicio de tu mensaje.`;
       }
     });
 
-    socket.on("toggle_friend", async (targetUser, callback) => {
+    socket.on("send_friend_request", async (targetUser, callback) => {
         if (!currentUsername) return callback({ success: false });
         if (targetUser === currentUsername) return callback({ success: false });
+        
+        if (fdb) {
+            const uRef = doc(fdb, 'users', targetUser);
+            const docSnap = await getDoc(uRef);
+            if (docSnap.exists()) {
+                let requests = docSnap.data().friend_requests || [];
+                if (!requests.includes(currentUsername)) {
+                    requests.push(currentUsername);
+                    await updateDoc(uRef, { friend_requests: requests });
+                }
+            }
+        } else {
+            if (fallbackState.users[targetUser]) {
+                let requests = fallbackState.users[targetUser].friend_requests || [];
+                if (!requests.includes(currentUsername)) {
+                    requests.push(currentUsername);
+                    fallbackState.users[targetUser].friend_requests = requests;
+                    saveFallbackDB();
+                }
+            }
+        }
+        
+        // Notify target user if online
+        if (activeUsers[targetUser]) {
+            io.to(activeUsers[targetUser].socketId).emit("new_friend_request", currentUsername);
+        }
+        callback({ success: true });
+    });
 
-        let isFriend = false;
+    socket.on("accept_friend_request", async (targetUser, callback) => {
+        if (!currentUsername) return callback({ success: false });
+        
+        if (fdb) {
+            // Update current user
+            const uRef = doc(fdb, 'users', currentUsername);
+            const docSnap = await getDoc(uRef);
+            if (docSnap.exists()) {
+                let requests = docSnap.data().friend_requests || [];
+                let friends = docSnap.data().friends_list || [];
+                requests = requests.filter((r: string) => r !== targetUser);
+                if (!friends.includes(targetUser)) friends.push(targetUser);
+                await updateDoc(uRef, { friend_requests: requests, friends_list: friends });
+            }
+            // Update target user
+            const tRef = doc(fdb, 'users', targetUser);
+            const tSnap = await getDoc(tRef);
+            if (tSnap.exists()) {
+                let tFriends = tSnap.data().friends_list || [];
+                if (!tFriends.includes(currentUsername)) tFriends.push(currentUsername);
+                await updateDoc(tRef, { friends_list: tFriends });
+            }
+        } else {
+            if (fallbackState.users[currentUsername]) {
+                let requests = fallbackState.users[currentUsername].friend_requests || [];
+                let friends = fallbackState.users[currentUsername].friends_list || [];
+                requests = requests.filter((r: string) => r !== targetUser);
+                if (!friends.includes(targetUser)) friends.push(targetUser);
+                fallbackState.users[currentUsername].friend_requests = requests;
+                fallbackState.users[currentUsername].friends_list = friends;
+            }
+            if (fallbackState.users[targetUser]) {
+                let tFriends = fallbackState.users[targetUser].friends_list || [];
+                if (!tFriends.includes(currentUsername)) tFriends.push(currentUsername);
+                fallbackState.users[targetUser].friends_list = tFriends;
+            }
+            saveFallbackDB();
+        }
+        emitActiveUsers(); // To broadcast updated friend info
+        callback({ success: true });
+    });
+
+    socket.on("reject_friend_request", async (targetUser, callback) => {
+        if (!currentUsername) return callback({ success: false });
+        if (fdb) {
+            const uRef = doc(fdb, 'users', currentUsername);
+            const docSnap = await getDoc(uRef);
+            if (docSnap.exists()) {
+                let requests = docSnap.data().friend_requests || [];
+                requests = requests.filter((r: string) => r !== targetUser);
+                await updateDoc(uRef, { friend_requests: requests });
+            }
+        } else {
+            if (fallbackState.users[currentUsername]) {
+                let requests = fallbackState.users[currentUsername].friend_requests || [];
+                requests = requests.filter((r: string) => r !== targetUser);
+                fallbackState.users[currentUsername].friend_requests = requests;
+                saveFallbackDB();
+            }
+        }
+        callback({ success: true });
+    });
+    
+    socket.on("remove_friend", async (targetUser, callback) => {
+        if (!currentUsername) return callback({ success: false });
         if (fdb) {
             const uRef = doc(fdb, 'users', currentUsername);
             const docSnap = await getDoc(uRef);
             if (docSnap.exists()) {
                 let friends = docSnap.data().friends_list || [];
-                if (friends.includes(targetUser)) {
-                    friends = friends.filter((f: string) => f !== targetUser);
-                } else {
-                    friends.push(targetUser);
-                    isFriend = true;
-                }
+                friends = friends.filter((f: string) => f !== targetUser);
                 await updateDoc(uRef, { friends_list: friends });
-                if (activeUsers[currentUsername]) activeUsers[currentUsername].friends_list = friends;
+            }
+            const tRef = doc(fdb, 'users', targetUser);
+            const tSnap = await getDoc(tRef);
+            if (tSnap.exists()) {
+                let tFriends = tSnap.data().friends_list || [];
+                tFriends = tFriends.filter((f: string) => f !== currentUsername);
+                await updateDoc(tRef, { friends_list: tFriends });
             }
         } else {
             if (fallbackState.users[currentUsername]) {
                 let friends = fallbackState.users[currentUsername].friends_list || [];
-                if (friends.includes(targetUser)) {
-                    friends = friends.filter((f: string) => f !== targetUser);
-                } else {
-                    friends.push(targetUser);
-                    isFriend = true;
-                }
+                friends = friends.filter((f: string) => f !== targetUser);
                 fallbackState.users[currentUsername].friends_list = friends;
-                if (activeUsers[currentUsername]) activeUsers[currentUsername].friends_list = friends;
-                saveFallbackDB();
             }
+            if (fallbackState.users[targetUser]) {
+                let tFriends = fallbackState.users[targetUser].friends_list || [];
+                tFriends = tFriends.filter((f: string) => f !== currentUsername);
+                fallbackState.users[targetUser].friends_list = tFriends;
+            }
+            saveFallbackDB();
         }
         emitActiveUsers();
-        callback({ success: true, isFriend });
+        callback({ success: true });
     });
 
     socket.on("toggle_ban", async (targetUser, callback) => {
@@ -1055,6 +1147,13 @@ Regla final: NO incluyas prefijos como 'Elizabeth:' al inicio de tu mensaje.`;
         } finally {
           io.emit("stop_typing", { username: "Elizabeth", chat: currentUsername });
         }
+      }
+    });
+
+    socket.on("read_messages", (data: { targetUser: string }) => {
+      if (!currentUsername) return;
+      if (activeUsers[data.targetUser]) {
+        io.to(activeUsers[data.targetUser].socketId).emit("messages_read", { by: currentUsername });
       }
     });
 

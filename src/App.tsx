@@ -78,6 +78,7 @@ function MainApp() {
   
   const [activeChat, setActiveChat] = useState('global');
   const [messages, setMessages] = useState<any[]>([]);
+  const [readReceipts, setReadReceipts] = useState<Record<string, boolean>>({});
   const [inputValue, setInputValue] = useState('');
   const [typingUsers, setTypingUsers] = useState<Record<string, string[]>>({});
   
@@ -185,6 +186,7 @@ function MainApp() {
       socket.emit('get_private_history', activeChat, (historyMsgs: any[]) => {
         setMessages(historyMsgs);
         setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
+        socket.emit("read_messages", { targetUser: activeChat });
       });
     }
     
@@ -202,6 +204,7 @@ function MainApp() {
       if (activeChat === fromUser) {
         setMessages(prev => [...prev, msg]);
         setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
+        socket.emit("read_messages", { targetUser: activeChat });
       } else {
         setUnreadPMs(prev => ({ ...prev, [fromUser]: true }));
       }
@@ -248,6 +251,10 @@ function MainApp() {
           const chatTyping = prev[data.chat] || [];
           return { ...prev, [data.chat]: chatTyping.filter(u => u !== data.username) };
        });
+    });
+
+    socket.on('messages_read', (data: { by: string }) => {
+       setReadReceipts(prev => ({...prev, [data.by]: true}));
     });
     
     const unsubUser = onSnapshot(doc(db, "users", user.username), (docSnap) => {
@@ -307,6 +314,7 @@ function MainApp() {
     } else {
       const optimisticMsg = { ...payload, sender: user.username, createdAt: Date.now() };
       setMessages(prev => [...prev, optimisticMsg]);
+      setReadReceipts(prev => ({...prev, [activeChat]: false}));
       setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
       
       socket.emit('send_private', payload, activeChat, (res: any) => {
@@ -431,11 +439,11 @@ function MainApp() {
              </button>
              <button 
                 onClick={() => { setIsFriendsSidebarOpen(!isFriendsSidebarOpen); }}
-                className={`p-2 rounded-xl transition-all relative ${Object.values(unreadPMs).some(v => v) ? 'text-cyan-400 bg-cyan-500/10' : 'text-gray-400 hover:text-white'}`}
+                className={`p-2 rounded-xl transition-all relative ${(Object.values(unreadPMs).some(v => v) || (user.friend_requests && user.friend_requests.length > 0)) ? 'text-cyan-400 bg-cyan-500/10' : 'text-gray-400 hover:text-white'}`}
              >
                 <Users size={24} strokeWidth={1.5} />
-                {Object.values(unreadPMs).some(v => v) && (
-                   <div className="absolute top-1 right-1 w-2 h-2 bg-cyan-500 rounded-full border border-[#07090e]"></div>
+                {(Object.values(unreadPMs).some(v => v) || (user.friend_requests && user.friend_requests.length > 0)) && (
+                   <div className="absolute top-1 right-1 w-2.5 h-2.5 bg-cyan-500 rounded-full border border-[#07090e] shadow-[0_0_10px_rgba(6,182,212,1)] animate-pulse"></div>
                 )}
              </button>
              <div className="relative">
@@ -680,6 +688,12 @@ function MainApp() {
                      </div>
                   )}
 
+                  {activeChat !== 'global' && activeChat !== 'pluma' && activeChat !== 'fama' && readReceipts[activeChat] && messages.length > 0 && messages[messages.length - 1].sender === user.username && (
+                      <div className="flex justify-end mt-1 mb-2 px-2 animate-in fade-in">
+                          <span className="text-[10px] text-cyan-400/80 font-medium flex items-center gap-1">✓ Visto</span>
+                      </div>
+                  )}
+
                   <div ref={bottomRef} className="h-1" />
               </div>
 
@@ -848,23 +862,39 @@ function MainApp() {
                    </button>
                    {selectedUserModal.username !== 'Elizabeth' && (
                      <div className="flex gap-2">
-                         <button 
-                             onClick={() => {
-                                 socket.emit('toggle_friend', selectedUserModal.username, (res: any) => {
-                                     if(res.success) {
-                                         setUser(prev => ({
-                                             ...prev,
-                                             friends_list: res.isFriend ? [...(prev.friends_list || []), selectedUserModal.username] : (prev.friends_list || []).filter(f => f !== selectedUserModal.username)
-                                         }));
-                                         setSelectedUserModal(null);
-                                     }
-                                 });
-                             }}
-                             className={`flex-1 flex items-center justify-center gap-2 p-3 rounded-xl font-medium transition-colors border ${user.friends_list?.includes(selectedUserModal.username) ? 'text-green-400 bg-green-500/10 border-green-500/20 hover:bg-green-500/20' : 'text-cyan-400 bg-cyan-500/10 border-cyan-500/20 hover:bg-cyan-500/20'}`}
-                         >
-                             <UserPlus size={18} />
-                             {user.friends_list?.includes(selectedUserModal.username) ? 'Quitar Amigo' : 'Añadir Amigo'}
-                         </button>
+                         {user.friends_list?.includes(selectedUserModal.username) ? (
+                             <button 
+                                 onClick={() => {
+                                     socket.emit('remove_friend', selectedUserModal.username, (res: any) => {
+                                         if(res.success) {
+                                             setUser(prev => ({
+                                                 ...prev,
+                                                 friends_list: (prev.friends_list || []).filter(f => f !== selectedUserModal.username)
+                                             }));
+                                             setSelectedUserModal(null);
+                                         }
+                                     });
+                                 }}
+                                 className="flex-1 flex items-center justify-center gap-2 p-3 rounded-xl font-medium transition-colors border text-red-400 bg-red-500/10 border-red-500/20 hover:bg-red-500/20"
+                             >
+                                 <UserPlus size={18} />
+                                 Eliminar Amigo
+                             </button>
+                         ) : (
+                             <button 
+                                 onClick={() => {
+                                     socket.emit('send_friend_request', selectedUserModal.username, (res: any) => {
+                                         if(res.success) {
+                                             setSelectedUserModal(null);
+                                         }
+                                     });
+                                 }}
+                                 className="flex-1 flex items-center justify-center gap-2 p-3 rounded-xl font-medium transition-colors border text-cyan-400 bg-cyan-500/10 border-cyan-500/20 hover:bg-cyan-500/20"
+                             >
+                                 <UserPlus size={18} />
+                                 Enviar solicitud
+                             </button>
+                         )}
                          {selectedUserModal.role !== 'admin' && (
                              <button 
                                  onClick={() => {
@@ -909,26 +939,55 @@ function MainApp() {
                        </button>
                    </div>
                    <div className="flex-1 overflow-y-auto p-2 space-y-1">
+                       {user.friend_requests && user.friend_requests.length > 0 && (
+                           <div className="mb-4">
+                               <h3 className="text-[10px] text-gray-500 font-bold uppercase tracking-wider mb-2 px-2">Solicitudes Pendientes</h3>
+                               {user.friend_requests.map(reqUsername => (
+                                   <div key={`req-${reqUsername}`} className="flex items-center gap-3 p-3 rounded-2xl bg-white/5 border border-white/10 mb-2">
+                                       <div className="w-10 h-10 rounded-full bg-gradient-to-br from-gray-700 to-gray-800 border border-white/10 overflow-hidden relative shrink-0">
+                                           <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${reqUsername}`} className="w-full h-full object-cover" />
+                                       </div>
+                                       <div className="flex-1 min-w-0">
+                                           <p className="text-white font-medium text-sm truncate">{reqUsername}</p>
+                                           <p className="text-xs text-gray-400">Quiere ser tu amigo</p>
+                                       </div>
+                                       <div className="flex gap-2 shrink-0">
+                                           <button onClick={() => socket.emit('accept_friend_request', reqUsername)} className="bg-green-500/20 text-green-400 p-2 rounded-xl hover:bg-green-500/30 transition-colors">
+                                               ✓
+                                           </button>
+                                           <button onClick={() => socket.emit('reject_friend_request', reqUsername)} className="bg-red-500/20 text-red-400 p-2 rounded-xl hover:bg-red-500/30 transition-colors">
+                                               ✕
+                                           </button>
+                                       </div>
+                                   </div>
+                               ))}
+                           </div>
+                       )}
+
+                       {user.friends_list && user.friends_list.length > 0 && (
+                          <h3 className="text-[10px] text-gray-500 font-bold uppercase tracking-wider mb-2 px-2">Amigos</h3>
+                       )}
                        {(!user.friends_list || user.friends_list.length === 0) ? (
                            <p className="text-gray-500 text-center text-sm mt-10">No tienes amigos agregados aún.</p>
                        ) : (
                            user.friends_list.map(friendUsername => {
                                const isOnline = usersOnline.some(u => u.username === friendUsername);
                                const friendInfo = usersOnline.find(u => u.username === friendUsername);
+                               const hasNewMsg = unreadPMs[friendUsername];
                                return (
                                    <div 
                                        key={friendUsername} 
-                                       onClick={() => { setActiveChat(friendUsername); setUnreadPMs(prev => ({...prev, [friendUsername]: false})); setIsFriendsSidebarOpen(false); }}
-                                       className="flex items-center gap-3 p-3 rounded-2xl hover:bg-white/5 cursor-pointer transition-colors border border-transparent hover:border-white/5 group"
+                                       onClick={() => { setActiveChat(friendUsername); setUnreadPMs(prev => ({...prev, [friendUsername]: false})); }}
+                                       className={`flex items-center gap-3 p-3 rounded-2xl hover:bg-white/5 cursor-pointer transition-colors border group ${hasNewMsg ? 'border-cyan-500/50 bg-cyan-500/5 shadow-[0_0_15px_rgba(6,182,212,0.15)]' : 'border-transparent hover:border-white/5'}`}
                                    >
-                                       <div className="w-10 h-10 rounded-full bg-gradient-to-br from-gray-700 to-gray-800 border border-white/10 overflow-hidden relative">
+                                       <div className="w-10 h-10 rounded-full bg-gradient-to-br from-gray-700 to-gray-800 border border-white/10 overflow-hidden relative shrink-0">
                                            <img src={friendInfo?.profilePic || `https://api.dicebear.com/7.x/avataaars/svg?seed=${friendUsername}`} className="w-full h-full object-cover" />
                                            <div className={`absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-[#0f111a] ${isOnline ? 'bg-green-500' : 'bg-gray-500'}`}></div>
                                        </div>
                                        <div className="flex-1 min-w-0">
                                            <div className="flex justify-between items-center">
                                                <p className="text-white font-medium text-sm truncate">{friendUsername}</p>
-                                               {unreadPMs[friendUsername] && <div className="w-2 h-2 rounded-full bg-cyan-500 ml-2"></div>}
+                                               {hasNewMsg && <div className="text-[10px] font-bold bg-cyan-500 text-[#0f111a] px-2 py-0.5 rounded-full shadow-[0_0_8px_rgba(6,182,212,0.8)]">Nuevo</div>}
                                            </div>
                                            <p className="text-xs text-gray-500 truncate">{isOnline ? friendInfo?.statusMessage || 'Conectado' : 'Desconectado'}</p>
                                        </div>
