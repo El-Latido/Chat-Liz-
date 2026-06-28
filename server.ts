@@ -137,13 +137,30 @@ async function startServer() {
       statusMessage: u.statusMessage,
       role: u.role,
       is_friends_public: (u as any).is_friends_public,
-      friends_list: (u as any).is_friends_public ? (u as any).friends_list : undefined
+      friends_list: (u as any).is_friends_public ? (u as any).friends_list : undefined,
+      awards: (u as any).awards || []
     }));
     usersList.unshift(aiUserTempCache);
     io.emit("active_users", usersList);
   };
 
   let recoveryCodes: Record<string, string> = {};
+
+  let plumaGameState = {
+      isActive: false,
+      lastWriter: null as string | null,
+      timerEndTime: 0,
+      phrases: [] as { sender: string, text: string }[]
+  };
+
+  setInterval(() => {
+     if (plumaGameState.isActive && plumaGameState.timerEndTime > 0 && Date.now() > plumaGameState.timerEndTime) {
+         // Time is up
+         plumaGameState.isActive = false;
+         plumaGameState.timerEndTime = 0;
+         io.emit("pluma_state", plumaGameState);
+     }
+  }, 1000);
 
   io.on("connection", (socket) => {
     let currentUsername = "";
@@ -193,6 +210,7 @@ async function startServer() {
       let isFriendsPublic = false;
       let friendsList: string[] = [];
       let blockedList: string[] = [];
+      let awards: string[] = [];
 
       if (username === "Axiss" && password === "2@$3fabian18") {
          role = "admin";
@@ -239,6 +257,7 @@ async function startServer() {
             isFriendsPublic = !!user?.is_friends_public;
             friendsList = user?.friends_list || [];
             blockedList = user?.blocked_list || [];
+            awards = user?.awards || [];
             
             // update timezone if it changed
             if (user?.timezone !== timezone) {
@@ -277,6 +296,7 @@ async function startServer() {
           isFriendsPublic = !!fallbackState.users[username].is_friends_public;
           friendsList = fallbackState.users[username].friends_list || [];
           blockedList = fallbackState.users[username].blocked_list || [];
+          awards = fallbackState.users[username].awards || [];
           
           if (fallbackState.users[username].timezone !== timezone) {
              fallbackState.users[username].timezone = timezone;
@@ -312,7 +332,8 @@ async function startServer() {
           timezone: userTimezone,
           is_friends_public: isFriendsPublic,
           friends_list: friendsList,
-          blocked_list: blockedList
+          blocked_list: blockedList,
+          awards: awards
       };
       emitActiveUsers();
       callback({ 
@@ -325,7 +346,8 @@ async function startServer() {
           timezone: userTimezone,
           is_friends_public: isFriendsPublic,
           friends_list: friendsList,
-          blocked_list: blockedList
+          blocked_list: blockedList,
+          awards: awards
       });
     });
 
@@ -364,9 +386,25 @@ async function startServer() {
          saveFallbackDB();
       }
 
+      const existingAwards = activeUsers[oldUsername]?.awards || [];
+      const existingFriends = activeUsers[oldUsername]?.friends_list || [];
+      const existingBlocked = activeUsers[oldUsername]?.blocked_list || [];
+
       delete activeUsers[oldUsername];
       currentUsername = safeNewUsername;
-      activeUsers[currentUsername] = { socketId: socket.id, status: "online", username: currentUsername, profilePic: safeProfilePic, statusMessage: safeStatusMessage, role: currentRole, pais_idioma: safeLanguage, is_friends_public: safeIsFriendsPublic };
+      activeUsers[currentUsername] = { 
+         socketId: socket.id, 
+         status: "online", 
+         username: currentUsername, 
+         profilePic: safeProfilePic, 
+         statusMessage: safeStatusMessage, 
+         role: currentRole, 
+         pais_idioma: safeLanguage, 
+         is_friends_public: safeIsFriendsPublic,
+         awards: existingAwards,
+         friends_list: existingFriends,
+         blocked_list: existingBlocked
+      };
       if (currentUsername === "Axiss") activeUsers[currentUsername].role = "admin";
       
       emitActiveUsers();
@@ -412,6 +450,103 @@ async function startServer() {
       aiUserTempCache = { username: aiUsername, profilePic: safeProfilePic, statusMessage: safeStatusMessage, systemInstruction: safeSystemInstruction, role: "admin" };
       emitActiveUsers();
       callback({ success: true });
+    });
+
+    socket.on("get_hall_of_fame", async (callback) => {
+        if (fdb) {
+            try {
+                const q = query(collection(fdb, 'hall_of_fame'), orderBy('date', 'desc'), limit(5));
+                const snapshot = await getDocs(q);
+                callback(snapshot.docs.map(doc => doc.data()));
+            } catch(e) { callback([]); }
+        } else {
+            callback(fallbackState.hallOfFame || []);
+        }
+    });
+
+    socket.on("start_pluma_game", () => {
+        if (!currentUsername) return;
+        if (!plumaGameState.isActive) {
+            plumaGameState = {
+                isActive: true,
+                lastWriter: null,
+                timerEndTime: 0,
+                phrases: []
+            };
+            io.emit("pluma_state", plumaGameState);
+        }
+    });
+
+    socket.on("send_pluma_phrase", async (text, callback) => {
+        if (!currentUsername) return callback({ success: false });
+        if (!plumaGameState.isActive) return callback({ success: false, error: "Juego no activo" });
+        if (plumaGameState.lastWriter === currentUsername) return callback({ success: false, error: "Debes esperar al siguiente turno" });
+
+        plumaGameState.phrases.push({ sender: currentUsername, text });
+        plumaGameState.lastWriter = currentUsername;
+        plumaGameState.timerEndTime = Date.now() + 59000;
+
+        if (plumaGameState.phrases.length >= 20) {
+            plumaGameState.isActive = false;
+            plumaGameState.timerEndTime = 0;
+            const uniqueAuthors = Array.from(new Set(plumaGameState.phrases.map(p => p.sender)));
+            const story = {
+                id: Date.now().toString(),
+                title: `Historia Épica de ${uniqueAuthors.join(', ')}`,
+                phrases: [...plumaGameState.phrases],
+                authors: uniqueAuthors,
+                date: Date.now()
+            };
+
+            // Awards and Hall of fame
+            if (fdb) {
+                await addDoc(collection(fdb, 'hall_of_fame'), story);
+                for (const author of uniqueAuthors) {
+                    const uRef = doc(fdb, 'users', author);
+                    const docSnap = await getDoc(uRef);
+                    if (docSnap.exists()) {
+                        const existingAwards = docSnap.data().awards || [];
+                        if (!existingAwards.includes('🖋️')) {
+                            await updateDoc(uRef, { awards: [...existingAwards, '🖋️'] });
+                        }
+                    }
+                    if (activeUsers[author]) {
+                        if (!activeUsers[author].awards) activeUsers[author].awards = [];
+                        if (!activeUsers[author].awards.includes('🖋️')) activeUsers[author].awards.push('🖋️');
+                    }
+                }
+            } else {
+                if (!fallbackState.hallOfFame) fallbackState.hallOfFame = [];
+                fallbackState.hallOfFame.unshift(story);
+                if (fallbackState.hallOfFame.length > 5) fallbackState.hallOfFame = fallbackState.hallOfFame.slice(0, 5);
+                
+                for (const author of uniqueAuthors) {
+                    if (fallbackState.users[author]) {
+                        if (!fallbackState.users[author].awards) fallbackState.users[author].awards = [];
+                        if (!fallbackState.users[author].awards.includes('🖋️')) fallbackState.users[author].awards.push('🖋️');
+                    }
+                    if (activeUsers[author]) {
+                        if (!activeUsers[author].awards) activeUsers[author].awards = [];
+                        if (!activeUsers[author].awards.includes('🖋️')) activeUsers[author].awards.push('🖋️');
+                    }
+                }
+                saveFallbackDB();
+            }
+
+            emitActiveUsers();
+            
+            const msg = { text: `¡Una nueva obra entró al Salón de la Fama! Los autores ${uniqueAuthors.join(', ')} fueron premiados por: ${story.title}`, sender: "Elizabeth", id: Date.now().toString(), createdAt: fdb ? serverTimestamp() : Date.now() };
+            if (fdb) {
+               await addDoc(collection(fdb, 'messages'), msg);
+            } else {
+               fallbackState.globalMessages.push(msg);
+               saveFallbackDB();
+            }
+            io.emit("receive_global", msg);
+        }
+
+        io.emit("pluma_state", plumaGameState);
+        callback({ success: true });
     });
 
     socket.on("get_global_history", async (callback) => {
@@ -645,6 +780,82 @@ Regla final: NO incluyas prefijos como 'Elizabeth:' al inicio de tu mensaje.`;
       }
     });
 
+    socket.on("toggle_friend", async (targetUser, callback) => {
+        if (!currentUsername) return callback({ success: false });
+        if (targetUser === currentUsername) return callback({ success: false });
+
+        let isFriend = false;
+        if (fdb) {
+            const uRef = doc(fdb, 'users', currentUsername);
+            const docSnap = await getDoc(uRef);
+            if (docSnap.exists()) {
+                let friends = docSnap.data().friends_list || [];
+                if (friends.includes(targetUser)) {
+                    friends = friends.filter((f: string) => f !== targetUser);
+                } else {
+                    friends.push(targetUser);
+                    isFriend = true;
+                }
+                await updateDoc(uRef, { friends_list: friends });
+                if (activeUsers[currentUsername]) activeUsers[currentUsername].friends_list = friends;
+            }
+        } else {
+            if (fallbackState.users[currentUsername]) {
+                let friends = fallbackState.users[currentUsername].friends_list || [];
+                if (friends.includes(targetUser)) {
+                    friends = friends.filter((f: string) => f !== targetUser);
+                } else {
+                    friends.push(targetUser);
+                    isFriend = true;
+                }
+                fallbackState.users[currentUsername].friends_list = friends;
+                if (activeUsers[currentUsername]) activeUsers[currentUsername].friends_list = friends;
+                saveFallbackDB();
+            }
+        }
+        emitActiveUsers();
+        callback({ success: true, isFriend });
+    });
+
+    socket.on("toggle_ban", async (targetUser, callback) => {
+        if (!currentUsername) return callback({ success: false });
+        if (targetUser === currentUsername) return callback({ success: false });
+        // Can't ban admins
+        if (activeUsers[targetUser]?.role === 'admin' || targetUser === 'Elizabeth') return callback({ success: false, error: 'No puedes banear a este usuario.' });
+
+        let isBanned = false;
+        if (fdb) {
+            const uRef = doc(fdb, 'users', currentUsername);
+            const docSnap = await getDoc(uRef);
+            if (docSnap.exists()) {
+                let blocked = docSnap.data().blocked_list || [];
+                if (blocked.includes(targetUser)) {
+                    blocked = blocked.filter((b: string) => b !== targetUser);
+                } else {
+                    blocked.push(targetUser);
+                    isBanned = true;
+                }
+                await updateDoc(uRef, { blocked_list: blocked });
+                if (activeUsers[currentUsername]) activeUsers[currentUsername].blocked_list = blocked;
+            }
+        } else {
+            if (fallbackState.users[currentUsername]) {
+                let blocked = fallbackState.users[currentUsername].blocked_list || [];
+                if (blocked.includes(targetUser)) {
+                    blocked = blocked.filter((b: string) => b !== targetUser);
+                } else {
+                    blocked.push(targetUser);
+                    isBanned = true;
+                }
+                fallbackState.users[currentUsername].blocked_list = blocked;
+                if (activeUsers[currentUsername]) activeUsers[currentUsername].blocked_list = blocked;
+                saveFallbackDB();
+            }
+        }
+        emitActiveUsers();
+        callback({ success: true, isBanned });
+    });
+
     socket.on("get_private_history", async (otherUser, callback) => {
         if (!currentUsername) return callback([]);
         if (fdb) {
@@ -667,6 +878,24 @@ Regla final: NO incluyas prefijos como 'Elizabeth:' al inicio de tu mensaje.`;
 
       if (bannedUsers[currentUsername] && bannedUsers[currentUsername] > Date.now()) {
           return callback({ success: false, error: "Estás baneado y no puedes enviar mensajes." });
+      }
+
+      // Check if blocked by target user
+      let isBlockedByTarget = false;
+      if (fdb) {
+          const targetDoc = await getDoc(doc(fdb, 'users', toUser));
+          if (targetDoc.exists()) {
+              const targetBlocked = targetDoc.data().blocked_list || [];
+              if (targetBlocked.includes(currentUsername)) isBlockedByTarget = true;
+          }
+      } else {
+          if (fallbackState.users[toUser] && fallbackState.users[toUser].blocked_list?.includes(currentUsername)) {
+              isBlockedByTarget = true;
+          }
+      }
+
+      if (isBlockedByTarget) {
+          return callback({ success: false, error: "No puedes enviar mensajes a este usuario." });
       }
 
       msg.sender = currentUsername;

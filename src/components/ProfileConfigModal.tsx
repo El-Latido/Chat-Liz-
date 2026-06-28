@@ -24,9 +24,16 @@ export function ProfileConfigModal({
   const [password, setPassword] = useState(user.password || '');
   const [fotoURL, setFotoURL] = useState(user.profilePic || '');
   const [isFriendsPublic, setIsFriendsPublic] = useState(user.is_friends_public || false);
+  const [bgUrl, setBgUrl] = useState(localStorage.getItem('chatBg') || '');
 
   const handleSaveProfile = async () => {
     try {
+      if (bgUrl) {
+         localStorage.setItem('chatBg', bgUrl);
+      } else {
+         localStorage.removeItem('chatBg');
+      }
+
       // 1. Referencia al documento específico de este usuario en Firebase
       const userRef = doc(db, "users", user.username); 
 
@@ -151,6 +158,21 @@ export function ProfileConfigModal({
              >
                <div className={`absolute top-1 left-1 w-4 h-4 rounded-full bg-white transition-transform ${isFriendsPublic ? 'translate-x-6' : ''}`} />
              </button>
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-sm font-semibold text-gray-400">Fondo del Chat (URL o dejar vacío)</label>
+            <div className="flex gap-2">
+               <input 
+                  value={bgUrl}
+                  onChange={e => setBgUrl(e.target.value)}
+                  placeholder="https://..."
+                  className="w-full bg-[#0a0a16] p-3 rounded-xl border border-white/10 outline-none focus:border-cyan-500 transition-all text-white" 
+               />
+               <button onClick={() => setBgUrl('')} className="bg-white/5 hover:bg-white/10 px-4 rounded-xl border border-white/10 text-xs">
+                  Restaurar
+               </button>
+            </div>
           </div>
           
           {user.username === 'Axiss' && (

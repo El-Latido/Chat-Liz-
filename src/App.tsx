@@ -3,7 +3,7 @@ import {
   Send, User, MessageCircle, Settings, Bot, 
   Image as ImageIcon, Mic, StopCircle, 
   Menu, X, Hash, MessageSquare, LogOut, Search,
-  Paperclip, Smile, Globe, Box, Volume2, VolumeX, Users
+  Paperclip, Smile, Globe, Box, Volume2, VolumeX, Users, UserPlus, AlertCircle
 } from 'lucide-react';
 import { collection, onSnapshot, query, doc } from 'firebase/firestore';
 import { db } from './firebaseConfig';
@@ -84,6 +84,11 @@ function MainApp() {
   const [usersOnline, setUsersOnline] = useState<UserObj[]>([{ username: 'Elizabeth', statusMessage: 'Administradora', role: 'admin' }]); 
 
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isFriendsSidebarOpen, setIsFriendsSidebarOpen] = useState(false);
+  const [unreadPMs, setUnreadPMs] = useState<Record<string, boolean>>({});
+  const [plumaState, setPlumaState] = useState<any>({ isActive: false, timerEndTime: 0, phrases: [] });
+  const [hallOfFame, setHallOfFame] = useState<any[]>([]);
+  const chatBg = localStorage.getItem('chatBg');
 
   // Recovery States
   const [recoveryModalOpen, setRecoveryModalOpen] = useState(false);
@@ -196,7 +201,17 @@ function MainApp() {
       if (activeChat === fromUser) {
         setMessages(prev => [...prev, msg]);
         setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
+      } else {
+        setUnreadPMs(prev => ({ ...prev, [fromUser]: true }));
       }
+    });
+
+    socket.on('pluma_state', (state: any) => {
+      setPlumaState(state);
+    });
+
+    socket.emit('get_hall_of_fame', (data: any[]) => {
+      setHallOfFame(data);
     });
 
     socket.on('active_users', (usersList: UserObj[]) => {
@@ -396,11 +411,30 @@ function MainApp() {
 
          <div className="flex items-center gap-4">
              <button 
-                onClick={() => setActiveChat('global')}
+                onClick={() => { setActiveChat('global'); setUnreadPMs(prev => ({ ...prev, global: false })); }}
                 className={`flex items-center gap-2 px-4 py-2 rounded-xl border transition-all ${activeChat === 'global' ? 'bg-cyan-500/20 border-cyan-500/50 text-cyan-400' : 'bg-[#13151f] border-white/10 text-gray-400 hover:text-white hover:border-white/30'} shadow-[0_4px_10px_rgba(0,0,0,0.5)]`}
              >
                 <Globe size={20} />
                 <span className="font-bold text-sm hidden sm:inline">Mundo</span>
+             </button>
+             <button 
+                onClick={() => { setActiveChat('pluma'); }}
+                className={`flex items-center gap-2 px-4 py-2 rounded-xl border transition-all ${activeChat === 'pluma' ? 'bg-fuchsia-500/20 border-fuchsia-500/50 text-fuchsia-400' : 'bg-[#13151f] border-white/10 text-gray-400 hover:text-white hover:border-white/30'} shadow-[0_4px_10px_rgba(0,0,0,0.5)]`}
+             >
+                <div className="relative">
+                   <Bot size={20} />
+                   {plumaState.isActive && <div className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-red-500 rounded-full animate-pulse border border-black"></div>}
+                </div>
+                <span className="font-bold text-sm hidden sm:inline">La Pluma</span>
+             </button>
+             <button 
+                onClick={() => { setIsFriendsSidebarOpen(!isFriendsSidebarOpen); }}
+                className={`relative w-10 h-10 rounded-xl bg-[#13151f] border transition-all shadow-[0_4px_10px_rgba(0,0,0,0.5)] flex items-center justify-center ${Object.values(unreadPMs).some(v => v) ? 'border-cyan-500 text-cyan-400 bg-cyan-500/10' : 'border-white/10 text-gray-400 hover:text-white hover:border-white/30'}`}
+             >
+                <MessageSquare size={20} />
+                {Object.values(unreadPMs).some(v => v) && (
+                   <div className="absolute -top-1 -right-1 w-3 h-3 bg-cyan-500 rounded-full border-2 border-[#07090e]"></div>
+                )}
              </button>
              <div className="flex items-center gap-3 bg-[#13151f] border border-white/10 px-4 py-1.5 rounded-full shadow-[0_4px_10px_rgba(0,0,0,0.5)]">
                  <div className="w-7 h-7 rounded-full bg-gradient-to-br from-gray-700 to-gray-800 flex items-center justify-center text-xs font-bold border border-white/5 overflow-hidden">
@@ -496,8 +530,12 @@ function MainApp() {
                                >
                                    <img src={u.profilePic || `https://api.dicebear.com/7.x/avataaars/svg?seed=${u.username}`} alt="avatar" className="w-full h-full object-cover" />
                                </div>
-                               <button className="text-left flex-1 truncate" onClick={() => setActiveChat(u.username)}>
-                                 <span className="font-medium text-gray-300 text-[15px] truncate block">{u.username} <span className="text-gray-500">~</span></span>
+                               <button className="text-left flex-1 truncate flex items-center gap-1" onClick={() => setActiveChat(u.username)}>
+                                 <span className="font-medium text-gray-300 text-[15px] truncate block">{u.username}</span>
+                                 {u.awards && u.awards.map((award, idx) => (
+                                     <span key={idx} className="text-xs">{award}</span>
+                                 ))}
+                                 <span className="text-gray-500">~</span>
                                </button>
                            </div>
                            <div className="w-2.5 h-2.5 bg-green-500 rounded-full shadow-[0_0_8px_rgba(34,197,94,0.6)] flex-shrink-0"></div>
@@ -509,7 +547,7 @@ function MainApp() {
 
           {/* Main Chat Container */}
           <main className="flex-1 min-w-0 min-h-0 rounded-3xl relative flex flex-col bg-[#0f111a] overflow-hidden shadow-[0_0_30px_rgba(6,182,212,0.1)] border"
-                style={{ background: 'linear-gradient(#0f111a, #0f111a) padding-box, linear-gradient(135deg, #06b6d4 0%, #a855f7 100%) border-box', border: '1px solid transparent' }}>
+                style={{ background: chatBg ? `url(${chatBg}) center/cover no-repeat` : 'linear-gradient(#0f111a, #0f111a) padding-box, linear-gradient(135deg, #06b6d4 0%, #a855f7 100%) border-box', border: '1px solid transparent' }}>
               
               {/* Outer gradient border illusion via linear-gradient using a wrapper, but implemented directly on container above with box-shadow */}
               
@@ -538,7 +576,102 @@ function MainApp() {
                   </div>
               </div>
 
-              {/* Chat Feed */}
+              {activeChat === 'pluma' ? (
+                 <div className="flex-1 flex flex-col items-center justify-start p-6 overflow-y-auto bg-black/60 relative">
+                    <div className="absolute top-0 left-0 right-0 w-full bg-gradient-to-r from-fuchsia-600 to-cyan-600 p-3 flex justify-between items-center shadow-lg z-20">
+                       <h2 className="text-white font-bold text-xl drop-shadow-md">La Pluma Infinita</h2>
+                       <div className="flex gap-4">
+                           <button onClick={() => setActiveChat('fama')} className="text-white font-medium hover:text-cyan-200 transition">🏆 Salón de la Fama</button>
+                           {plumaState.isActive && (
+                               <div className={`px-4 py-1 rounded-full font-bold text-white shadow-inner flex items-center gap-2 ${
+                                   plumaState.timerEndTime - Date.now() < 10000 ? 'bg-red-500 animate-pulse' : 'bg-black/40'
+                               }`}>
+                                   ⏱️ {Math.max(0, Math.floor((plumaState.timerEndTime - Date.now()) / 1000))}s
+                               </div>
+                           )}
+                       </div>
+                    </div>
+
+                    {!plumaState.isActive && (
+                        <div className="text-center mt-32 flex-1 flex flex-col items-center justify-center">
+                            <Bot size={80} className="mx-auto text-fuchsia-500 mb-6 drop-shadow-[0_0_15px_rgba(217,70,239,0.5)]" />
+                            <h3 className="text-3xl font-bold text-white mb-4">Comienza una Nueva Historia</h3>
+                            <p className="text-gray-400 mb-8 max-w-md text-lg">Escribe la primera frase. Tienes 59 segundos por turno. Alcanza 20 frases entre todos para ganar y entrar al Salón de la Fama.</p>
+                            <button onClick={() => socket.emit('start_pluma_game')} className="bg-fuchsia-600 hover:bg-fuchsia-500 text-white px-8 py-4 rounded-full text-xl font-bold shadow-[0_0_20px_rgba(217,70,239,0.5)] transition-transform hover:scale-105 active:scale-95">
+                                Empezar Juego
+                            </button>
+                        </div>
+                    )}
+
+                    {plumaState.isActive && (
+                        <div className="w-full max-w-3xl mt-20 flex-1 flex flex-col pb-6">
+                            <div className="bg-[#12141c]/80 backdrop-blur-sm border border-fuchsia-500/30 p-6 rounded-2xl mb-6 shadow-xl flex-1 overflow-y-auto scrollbar-thin">
+                                <h4 className="text-center text-gray-500 font-bold mb-4 uppercase text-xs tracking-widest">
+                                    {plumaState.lastWriter === null ? 'Turno Libre' : `Último turno: ${plumaState.lastWriter} (Turno Libre)`}
+                                </h4>
+                                <div className="space-y-4">
+                                    {plumaState.phrases.map((p: any, i: number) => (
+                                        <p key={i} className="text-xl text-gray-200 leading-relaxed font-serif animate-in slide-in-from-bottom-2 fade-in">
+                                            <span className="text-fuchsia-400 font-bold font-sans text-sm mr-3 uppercase tracking-wider">{p.sender}</span>
+                                            {p.text}
+                                        </p>
+                                    ))}
+                                </div>
+                            </div>
+                            <div className="flex gap-3">
+                                <input 
+                                    disabled={plumaState.lastWriter === user.username}
+                                    value={inputValue}
+                                    onChange={e => setInputValue(e.target.value)}
+                                    onKeyDown={e => {
+                                        if (e.key === 'Enter' && inputValue.trim()) {
+                                            socket.emit('send_pluma_phrase', inputValue.trim(), () => setInputValue(''));
+                                        }
+                                    }}
+                                    className="flex-1 bg-[#12141c] p-4 rounded-xl border border-white/10 outline-none text-white focus:border-fuchsia-500 transition-colors disabled:opacity-50 text-lg shadow-inner"
+                                    placeholder={plumaState.lastWriter === user.username ? 'Debes esperar al siguiente turno...' : 'Aporta la siguiente frase...'}
+                                />
+                                <button 
+                                    disabled={plumaState.lastWriter === user.username || !inputValue.trim()}
+                                    onClick={() => { socket.emit('send_pluma_phrase', inputValue.trim(), () => setInputValue('')); }}
+                                    className="bg-fuchsia-600 hover:bg-fuchsia-500 disabled:bg-gray-700 text-white px-8 rounded-xl font-bold transition-colors shadow-lg disabled:shadow-none"
+                                >
+                                    Enviar
+                                </button>
+                            </div>
+                        </div>
+                    )}
+                 </div>
+              ) : activeChat === 'fama' ? (
+                 <div className="flex-1 overflow-y-auto p-6 bg-black/80 relative">
+                    <div className="max-w-4xl mx-auto mt-4">
+                        <div className="flex justify-between items-center mb-10">
+                            <h2 className="text-4xl font-bold text-yellow-400 drop-shadow-[0_0_15px_rgba(250,204,21,0.5)] flex items-center gap-4">
+                                <span className="text-5xl">🏆</span> El Legado
+                            </h2>
+                            <button onClick={() => setActiveChat('pluma')} className="text-gray-300 hover:text-white px-6 py-2 border border-white/10 rounded-full hover:bg-white/10 transition-colors bg-white/5 font-medium">Volver al Juego</button>
+                        </div>
+                        <div className="space-y-8">
+                            {hallOfFame.length === 0 ? <p className="text-gray-400 text-center text-xl mt-20 italic">Aún no hay historias legendarias.</p> : null}
+                            {hallOfFame.map((story, i) => (
+                                <div key={i} className="bg-gradient-to-br from-[#1c1822] to-[#12141c] border border-yellow-500/20 p-8 rounded-3xl shadow-2xl relative overflow-hidden">
+                                    <div className="absolute top-0 right-0 w-32 h-32 bg-yellow-500/5 rounded-full blur-3xl"></div>
+                                    <h3 className="text-2xl font-bold text-white mb-2 relative z-10">{story.title}</h3>
+                                    <p className="text-sm text-yellow-500/80 font-bold mb-6 italic uppercase tracking-wider relative z-10">Escrito por: {story.authors.join(', ')}</p>
+                                    <div className="space-y-2 mb-6 text-gray-300 font-serif leading-relaxed border-l-4 border-yellow-500/30 pl-6 text-lg relative z-10">
+                                        {story.phrases.map((p: any, j: number) => (
+                                            <span key={j}>{p.text} </span>
+                                        ))}
+                                    </div>
+                                    <p className="text-xs text-gray-500 text-right font-medium relative z-10">{new Date(story.date).toLocaleDateString()}</p>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                 </div>
+              ) : (
+                <>
+                  {/* Chat Feed */}
               <div className="flex-1 overflow-y-auto px-6 py-4 space-y-6 scrollbar-thin">
                   {messages.filter((m, i, arr) => 
                      m && m.sender && !(i > 0 && m.sender === 'Elizabeth' && arr[i-1] && m.text === arr[i-1].text)
@@ -546,12 +679,17 @@ function MainApp() {
                      const isLiz = m.sender === 'Elizabeth' || m.isAi;
                      const date = m.createdAt?.toDate ? m.createdAt.toDate() : new Date();
                      const timeStr = isNaN(date.getTime()) ? `10:0${idx % 10}` : date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                     const senderUser = usersOnline.find(u => u.username === m.sender);
 
                      return (
                          <div key={m.id || idx} className="text-[15px] font-medium leading-relaxed font-sans group">
                             <span className="text-gray-500 mr-2 font-normal">[{timeStr}]</span>
                             <span className={`font-bold mr-2 ${isLiz ? 'text-cyan-400' : 'text-blue-300'}`}>
-                               {isLiz ? 'ELIZABETH:' : `${m.sender}:`}
+                               {isLiz ? 'ELIZABETH' : m.sender}
+                               {!isLiz && senderUser?.awards?.map((award, i) => (
+                                  <span key={i} className="text-xs ml-1">{award}</span>
+                               ))}
+                               :
                             </span>
                             <span className={isLiz ? 'text-gray-200' : 'text-gray-300'}>
                                {isLiz ? `"${m.text}"` : m.text}
@@ -646,6 +784,8 @@ function MainApp() {
                       </button>
                   </div>
               </div>
+              </>
+              )}
           </main>
       </div>
 
@@ -696,6 +836,9 @@ function MainApp() {
              </div>
              <h3 className="text-xl font-bold text-white mb-1 flex items-center justify-center gap-2">
                 {selectedUserModal.username}
+                {selectedUserModal.awards && selectedUserModal.awards.map((award, idx) => (
+                    <span key={idx} className="text-xl" title="Galardón: Pluma Infinita">{award}</span>
+                ))}
                 {selectedUserModal.role === 'admin' && <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-fuchsia-500/20 text-fuchsia-400 border border-fuchsia-500/30">Admin</span>}
              </h3>
              <p className="text-cyan-400 text-sm mb-4">Online</p>
@@ -726,16 +869,102 @@ function MainApp() {
              </div>
              
              {selectedUserModal.username !== user.username && (
-               <button 
-                 onClick={() => { setActiveChat(selectedUserModal.username); setSelectedUserModal(null); }}
-                 className="w-full mt-6 flex items-center justify-center gap-2 text-white bg-white/5 hover:bg-white/10 p-3 rounded-xl font-medium transition-colors border border-white/10"
-               >
-                 <MessageCircle size={18} />
-                 Enviar mensaje privado
-               </button>
+               <div className="flex flex-col gap-2 mt-6">
+                   <button 
+                     onClick={() => { setActiveChat(selectedUserModal.username); setSelectedUserModal(null); }}
+                     className="w-full flex items-center justify-center gap-2 text-white bg-white/5 hover:bg-white/10 p-3 rounded-xl font-medium transition-colors border border-white/10"
+                   >
+                     <MessageCircle size={18} />
+                     Enviar mensaje
+                   </button>
+                   {selectedUserModal.username !== 'Elizabeth' && (
+                     <div className="flex gap-2">
+                         <button 
+                             onClick={() => {
+                                 socket.emit('toggle_friend', selectedUserModal.username, (res: any) => {
+                                     if(res.success) {
+                                         setUser(prev => ({
+                                             ...prev,
+                                             friends_list: res.isFriend ? [...(prev.friends_list || []), selectedUserModal.username] : (prev.friends_list || []).filter(f => f !== selectedUserModal.username)
+                                         }));
+                                         setSelectedUserModal(null);
+                                     }
+                                 });
+                             }}
+                             className={`flex-1 flex items-center justify-center gap-2 p-3 rounded-xl font-medium transition-colors border ${user.friends_list?.includes(selectedUserModal.username) ? 'text-green-400 bg-green-500/10 border-green-500/20 hover:bg-green-500/20' : 'text-cyan-400 bg-cyan-500/10 border-cyan-500/20 hover:bg-cyan-500/20'}`}
+                         >
+                             <UserPlus size={18} />
+                             {user.friends_list?.includes(selectedUserModal.username) ? 'Quitar Amigo' : 'Añadir Amigo'}
+                         </button>
+                         {selectedUserModal.role !== 'admin' && (
+                             <button 
+                                 onClick={() => {
+                                     socket.emit('toggle_ban', selectedUserModal.username, (res: any) => {
+                                         if(res.success) {
+                                             setUser(prev => ({
+                                                 ...prev,
+                                                 blocked_list: res.isBanned ? [...(prev.blocked_list || []), selectedUserModal.username] : (prev.blocked_list || []).filter(b => b !== selectedUserModal.username)
+                                             }));
+                                             setSelectedUserModal(null);
+                                         }
+                                     });
+                                 }}
+                                 className={`flex-1 flex items-center justify-center gap-2 p-3 rounded-xl font-medium transition-colors border ${user.blocked_list?.includes(selectedUserModal.username) ? 'text-yellow-400 bg-yellow-500/10 border-yellow-500/20 hover:bg-yellow-500/20' : 'text-red-400 bg-red-500/10 border-red-500/20 hover:bg-red-500/20'}`}
+                             >
+                                 <AlertCircle size={18} />
+                                 {user.blocked_list?.includes(selectedUserModal.username) ? 'Desbanear' : 'Banear'}
+                             </button>
+                         )}
+                     </div>
+                   )}
+               </div>
              )}
            </div>
          </div>
+       )}
+
+       {/* Friends Sidebar */}
+       {isFriendsSidebarOpen && (
+           <div className="fixed inset-y-0 right-0 w-80 bg-[#0f111a]/95 backdrop-blur-xl border-l border-white/10 shadow-2xl z-40 flex flex-col transform transition-transform animate-in slide-in-from-right">
+               <div className="p-6 border-b border-white/5 flex items-center justify-between">
+                   <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                       <Users size={24} className="text-cyan-400" />
+                       Mis Amigos
+                   </h2>
+                   <button onClick={() => setIsFriendsSidebarOpen(false)} className="text-gray-400 hover:text-white p-2 rounded-full hover:bg-white/10 transition-colors">
+                       <X size={20} />
+                   </button>
+               </div>
+               <div className="flex-1 overflow-y-auto p-4 space-y-2">
+                   {(!user.friends_list || user.friends_list.length === 0) ? (
+                       <p className="text-gray-500 text-center text-sm mt-10">No tienes amigos agregados aún.</p>
+                   ) : (
+                       user.friends_list.map(friendUsername => {
+                           const isOnline = usersOnline.some(u => u.username === friendUsername);
+                           const friendInfo = usersOnline.find(u => u.username === friendUsername);
+                           return (
+                               <div 
+                                   key={friendUsername} 
+                                   onClick={() => { setActiveChat(friendUsername); setUnreadPMs(prev => ({...prev, [friendUsername]: false})); setIsFriendsSidebarOpen(false); }}
+                                   className="flex items-center gap-3 p-3 rounded-xl hover:bg-white/5 cursor-pointer transition-colors border border-transparent hover:border-white/5 group"
+                               >
+                                   <div className="w-10 h-10 rounded-full bg-gradient-to-br from-gray-700 to-gray-800 border border-white/10 overflow-hidden relative">
+                                       <img src={friendInfo?.profilePic || `https://api.dicebear.com/7.x/avataaars/svg?seed=${friendUsername}`} className="w-full h-full object-cover" />
+                                       <div className={`absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-[#0f111a] ${isOnline ? 'bg-green-500' : 'bg-gray-500'}`}></div>
+                                   </div>
+                                   <div className="flex-1 min-w-0">
+                                       <div className="flex justify-between items-center">
+                                           <p className="text-white font-medium text-sm truncate">{friendUsername}</p>
+                                           {unreadPMs[friendUsername] && <div className="w-2 h-2 rounded-full bg-cyan-500 ml-2"></div>}
+                                       </div>
+                                       <p className="text-xs text-gray-500 truncate">{isOnline ? friendInfo?.statusMessage || 'Conectado' : 'Desconectado'}</p>
+                                   </div>
+                               </div>
+                           );
+                       })
+                   )}
+               </div>
+           </div>
        )}
     </div>
   );
