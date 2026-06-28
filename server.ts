@@ -6,6 +6,7 @@ import { createServer as createViteServer } from "vite";
 import { collection, doc, getDoc, setDoc, updateDoc, deleteDoc, getDocs, addDoc, query, orderBy, limitToLast, limit, serverTimestamp, getCountFromServer, onSnapshot } from "firebase/firestore";
 import { ref, uploadString, getDownloadURL } from "firebase/storage";
 import fs from "fs";
+import multer from "multer";
 import { GoogleGenAI } from "@google/genai";
 import dotenv from "dotenv";
 import { fdb, fStorage } from "./server/firebase";
@@ -54,6 +55,33 @@ async function startServer() {
   });
 
   app.use(express.json({ limit: "50mb" }));
+
+  const uploadsDir = path.join(process.cwd(), "static", "uploads");
+  if (!fs.existsSync(uploadsDir)) {
+    fs.mkdirSync(uploadsDir, { recursive: true });
+  }
+  app.use('/static/uploads', express.static(uploadsDir));
+
+  const storage = multer.diskStorage({
+    destination: (req, file, cb) => {
+      cb(null, uploadsDir);
+    },
+    filename: (req, file, cb) => {
+      // Clean up filename to avoid special characters
+      const originalName = file.originalname.replace(/[^a-zA-Z0-9.\-_]/g, '');
+      const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+      cb(null, uniqueSuffix + '-' + originalName);
+    }
+  });
+  const upload = multer({ storage });
+
+  app.post('/api/upload', upload.single('file'), (req, res) => {
+    if (!req.file) {
+      return res.status(400).json({ error: "No file uploaded" });
+    }
+    const fileUrl = `/static/uploads/${req.file.filename}`;
+    res.json({ url: fileUrl, filename: req.file.originalname, mimetype: req.file.mimetype });
+  });
 
   let activeUsers: Record<string, { socketId: string; status: string; username: string; profilePic?: string; statusMessage?: string; role?: string; pais_idioma?: string; timezone?: string }> = {};
 
