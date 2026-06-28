@@ -3,7 +3,7 @@ import {
   Send, User, MessageCircle, Settings, Bot, 
   Image as ImageIcon, Mic, StopCircle, 
   Menu, X, Hash, MessageSquare, LogOut, Search,
-  Paperclip, Smile, Globe, Box, Volume2, VolumeX
+  Paperclip, Smile, Globe, Box, Volume2, VolumeX, Users
 } from 'lucide-react';
 import { collection, onSnapshot, query, doc } from 'firebase/firestore';
 import { db } from './firebaseConfig';
@@ -149,7 +149,17 @@ function MainApp() {
 
     socket.emit('register_or_login', loginPayload, (res: any) => {
       if (res.success) {
-        setUser({ ...user, profilePic: res.profilePic, statusMessage: res.statusMessage, role: res.role, countryLanguage: res.countryLanguage || user.countryLanguage, timezone });
+        setUser({ 
+           ...user, 
+           profilePic: res.profilePic, 
+           statusMessage: res.statusMessage, 
+           role: res.role, 
+           countryLanguage: res.countryLanguage || user.countryLanguage, 
+           timezone,
+           is_friends_public: res.is_friends_public,
+           friends_list: res.friends_list || [],
+           blocked_list: res.blocked_list || []
+        });
         setIsLoggedIn(true);
       } else {
         alert(res.error || 'Error al iniciar sesión');
@@ -690,11 +700,29 @@ function MainApp() {
              </h3>
              <p className="text-cyan-400 text-sm mb-4">Online</p>
              
-             <div className="bg-[#0a0a16] border border-white/5 p-4 rounded-2xl relative">
+             <div className="bg-[#0a0a16] border border-white/5 p-4 rounded-2xl relative mb-4">
                 <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-[#12141c] px-2 text-xs text-gray-500 font-semibold uppercase">Estado</div>
                 <p className="text-gray-300 italic text-sm">
                    "{selectedUserModal.statusMessage || 'Disponible'}"
                 </p>
+             </div>
+             
+             {/* Friends Banner */}
+             <div className="bg-[#0a0a16] border border-cyan-500/20 p-4 rounded-2xl relative mb-4">
+                <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-[#12141c] px-2 text-xs text-cyan-400 font-semibold uppercase flex items-center gap-1">
+                   <Users size={12} /> Amigos
+                </div>
+                {selectedUserModal.username === user.username || selectedUserModal.is_friends_public ? (
+                   <p className="text-gray-300 text-sm">
+                      {(selectedUserModal.username === user.username ? user.friends_list : selectedUserModal.friends_list)?.length ? 
+                        (selectedUserModal.username === user.username ? user.friends_list : selectedUserModal.friends_list)?.join(', ')
+                        : 'No hay amigos para mostrar.'}
+                   </p>
+                ) : (
+                   <p className="text-gray-500 text-sm italic">
+                      La lista de amigos de este usuario es privada.
+                   </p>
+                )}
              </div>
              
              {selectedUserModal.username !== user.username && (

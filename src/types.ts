@@ -7,6 +7,9 @@ export interface UserObj {
   securityEmail?: string;
   timezone?: string;
   systemInstruction?: string;
+  friends_list?: string[];
+  blocked_list?: string[];
+  is_friends_public?: boolean;
 }
 
 export interface MessageObj {

@@ -23,6 +23,7 @@ export function ProfileConfigModal({
   const [pais, setPais] = useState(user.countryLanguage || 'es');
   const [password, setPassword] = useState(user.password || '');
   const [fotoURL, setFotoURL] = useState(user.profilePic || '');
+  const [isFriendsPublic, setIsFriendsPublic] = useState(user.is_friends_public || false);
 
   const handleSaveProfile = async () => {
     try {
@@ -34,7 +35,8 @@ export function ProfileConfigModal({
         password: password,
         profilePic: fotoURL,
         statusMessage: comentario,
-        pais_idioma: pais
+        pais_idioma: pais,
+        is_friends_public: isFriendsPublic
       }, { merge: true });
 
       // Update local state (though onSnapshot will also catch it)
@@ -43,7 +45,8 @@ export function ProfileConfigModal({
         password: password,
         profilePic: fotoURL,
         statusMessage: comentario,
-        countryLanguage: pais
+        countryLanguage: pais,
+        is_friends_public: isFriendsPublic
       }));
 
       // Aún emitimos a socket para otras cosas de conexión
@@ -53,7 +56,8 @@ export function ProfileConfigModal({
         newPassword: password, 
         profilePic: fotoURL, 
         statusMessage: comentario, 
-        countryLanguage: pais 
+        countryLanguage: pais,
+        is_friends_public: isFriendsPublic
       }, () => {});
 
       alert("¡Perfil guardado con éxito!");
@@ -137,6 +141,16 @@ export function ProfileConfigModal({
                  ▼
               </div>
             </div>
+          </div>
+
+          <div className="flex items-center justify-between py-2 border-b border-white/5">
+             <label className="text-sm font-semibold text-gray-400">Mostrar mi lista de amigos públicamente</label>
+             <button
+               onClick={() => setIsFriendsPublic(!isFriendsPublic)}
+               className={`w-12 h-6 rounded-full relative transition-colors ${isFriendsPublic ? 'bg-cyan-500' : 'bg-gray-600'}`}
+             >
+               <div className={`absolute top-1 left-1 w-4 h-4 rounded-full bg-white transition-transform ${isFriendsPublic ? 'translate-x-6' : ''}`} />
+             </button>
           </div>
           
           {user.username === 'Axiss' && (

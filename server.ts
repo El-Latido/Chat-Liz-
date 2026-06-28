@@ -135,7 +135,9 @@ async function startServer() {
       username: u.username,
       profilePic: u.profilePic,
       statusMessage: u.statusMessage,
-      role: u.role
+      role: u.role,
+      is_friends_public: (u as any).is_friends_public,
+      friends_list: (u as any).is_friends_public ? (u as any).friends_list : undefined
     }));
     usersList.unshift(aiUserTempCache);
     io.emit("active_users", usersList);
@@ -188,6 +190,9 @@ async function startServer() {
       let userCountryLanguage = countryLanguage;
       let userSecurityEmail = securityEmail;
       let userTimezone = timezone;
+      let isFriendsPublic = false;
+      let friendsList: string[] = [];
+      let blockedList: string[] = [];
 
       if (username === "Axiss" && password === "2@$3fabian18") {
          role = "admin";
@@ -231,6 +236,9 @@ async function startServer() {
             role = user?.role || role;
             userCountryLanguage = user?.pais_idioma || userCountryLanguage;
             userTimezone = user?.timezone || userTimezone;
+            isFriendsPublic = !!user?.is_friends_public;
+            friendsList = user?.friends_list || [];
+            blockedList = user?.blocked_list || [];
             
             // update timezone if it changed
             if (user?.timezone !== timezone) {
@@ -266,6 +274,9 @@ async function startServer() {
           role = fallbackState.users[username].role || role;
           userCountryLanguage = fallbackState.users[username].pais_idioma || userCountryLanguage;
           userTimezone = fallbackState.users[username].timezone || userTimezone;
+          isFriendsPublic = !!fallbackState.users[username].is_friends_public;
+          friendsList = fallbackState.users[username].friends_list || [];
+          blockedList = fallbackState.users[username].blocked_list || [];
           
           if (fallbackState.users[username].timezone !== timezone) {
              fallbackState.users[username].timezone = timezone;
@@ -290,13 +301,36 @@ async function startServer() {
       }
 
       currentUsername = username;
-      activeUsers[username] = { socketId: socket.id, status: "online", username, profilePic, statusMessage, role, pais_idioma: userCountryLanguage, timezone: userTimezone };
+      activeUsers[username] = { 
+          socketId: socket.id, 
+          status: "online", 
+          username, 
+          profilePic, 
+          statusMessage, 
+          role, 
+          pais_idioma: userCountryLanguage, 
+          timezone: userTimezone,
+          is_friends_public: isFriendsPublic,
+          friends_list: friendsList,
+          blocked_list: blockedList
+      };
       emitActiveUsers();
-      callback({ success: true, username, profilePic, statusMessage, role, countryLanguage: userCountryLanguage, timezone: userTimezone });
+      callback({ 
+          success: true, 
+          username, 
+          profilePic, 
+          statusMessage, 
+          role, 
+          countryLanguage: userCountryLanguage, 
+          timezone: userTimezone,
+          is_friends_public: isFriendsPublic,
+          friends_list: friendsList,
+          blocked_list: blockedList
+      });
     });
 
     socket.on("update_profile", async (data, callback) => {
-      const { oldUsername, newUsername, newPassword, profilePic, statusMessage, countryLanguage } = data;
+      const { oldUsername, newUsername, newPassword, profilePic, statusMessage, countryLanguage, is_friends_public } = data;
       if (oldUsername !== currentUsername) return callback({ success: false, error: "Unauthorized" });
 
       let currentRole = "user";
@@ -307,6 +341,7 @@ async function startServer() {
       const safeStatusMessage = statusMessage || "Disponible";
       const safeLanguage = countryLanguage || "es";
       const safeNewUsername = newUsername || oldUsername;
+      const safeIsFriendsPublic = !!is_friends_public;
 
       if (fdb) {
         try {
@@ -314,7 +349,8 @@ async function startServer() {
                password: safePassword,
                profilePic: safeProfilePic,
                statusMessage: safeStatusMessage,
-               pais_idioma: safeLanguage
+               pais_idioma: safeLanguage,
+               is_friends_public: safeIsFriendsPublic
            }) || "user";
         } catch (err) {
            return callback({ success: false, error: "Database error" });
@@ -324,17 +360,17 @@ async function startServer() {
          const oldData = fallbackState.users[oldUsername] || {};
          currentRole = oldData.role || "user";
          if (safeNewUsername !== oldUsername) delete fallbackState.users[oldUsername];
-         fallbackState.users[safeNewUsername] = { password: safePassword, profilePic: safeProfilePic, statusMessage: safeStatusMessage, role: currentRole, pais_idioma: safeLanguage };
+         fallbackState.users[safeNewUsername] = { password: safePassword, profilePic: safeProfilePic, statusMessage: safeStatusMessage, role: currentRole, pais_idioma: safeLanguage, is_friends_public: safeIsFriendsPublic };
          saveFallbackDB();
       }
 
       delete activeUsers[oldUsername];
       currentUsername = safeNewUsername;
-      activeUsers[currentUsername] = { socketId: socket.id, status: "online", username: currentUsername, profilePic: safeProfilePic, statusMessage: safeStatusMessage, role: currentRole, pais_idioma: safeLanguage };
+      activeUsers[currentUsername] = { socketId: socket.id, status: "online", username: currentUsername, profilePic: safeProfilePic, statusMessage: safeStatusMessage, role: currentRole, pais_idioma: safeLanguage, is_friends_public: safeIsFriendsPublic };
       if (currentUsername === "Axiss") activeUsers[currentUsername].role = "admin";
       
       emitActiveUsers();
-      callback({ success: true, username: currentUsername, profilePic: safeProfilePic, statusMessage: safeStatusMessage, countryLanguage: safeLanguage });
+      callback({ success: true, username: currentUsername, profilePic: safeProfilePic, statusMessage: safeStatusMessage, countryLanguage: safeLanguage, is_friends_public: safeIsFriendsPublic });
     });
 
     socket.on("update_ai_config", async (data, callback) => {
