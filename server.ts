@@ -352,7 +352,7 @@ async function startServer() {
     });
 
     socket.on("update_profile", async (data, callback) => {
-      const { oldUsername, newUsername, newPassword, profilePic, statusMessage, countryLanguage, is_friends_public } = data;
+      const { oldUsername, newUsername, newPassword, profilePic, statusMessage, countryLanguage, is_friends_public, preferred_theme } = data;
       if (oldUsername !== currentUsername) return callback({ success: false, error: "Unauthorized" });
 
       let currentRole = "user";
@@ -364,6 +364,7 @@ async function startServer() {
       const safeLanguage = countryLanguage || "es";
       const safeNewUsername = newUsername || oldUsername;
       const safeIsFriendsPublic = !!is_friends_public;
+      const safePreferredTheme = preferred_theme || "classic";
 
       if (fdb) {
         try {
@@ -372,7 +373,8 @@ async function startServer() {
                profilePic: safeProfilePic,
                statusMessage: safeStatusMessage,
                pais_idioma: safeLanguage,
-               is_friends_public: safeIsFriendsPublic
+               is_friends_public: safeIsFriendsPublic,
+               preferred_theme: safePreferredTheme
            }) || "user";
         } catch (err) {
            return callback({ success: false, error: "Database error" });
@@ -382,7 +384,7 @@ async function startServer() {
          const oldData = fallbackState.users[oldUsername] || {};
          currentRole = oldData.role || "user";
          if (safeNewUsername !== oldUsername) delete fallbackState.users[oldUsername];
-         fallbackState.users[safeNewUsername] = { password: safePassword, profilePic: safeProfilePic, statusMessage: safeStatusMessage, role: currentRole, pais_idioma: safeLanguage, is_friends_public: safeIsFriendsPublic };
+         fallbackState.users[safeNewUsername] = { password: safePassword, profilePic: safeProfilePic, statusMessage: safeStatusMessage, role: currentRole, pais_idioma: safeLanguage, is_friends_public: safeIsFriendsPublic, preferred_theme: safePreferredTheme };
          saveFallbackDB();
       }
 
@@ -401,6 +403,7 @@ async function startServer() {
          role: currentRole, 
          pais_idioma: safeLanguage, 
          is_friends_public: safeIsFriendsPublic,
+         preferred_theme: safePreferredTheme,
          awards: existingAwards,
          friends_list: existingFriends,
          blocked_list: existingBlocked

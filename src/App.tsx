@@ -406,10 +406,10 @@ function MainApp() {
   }
 
   return (
-    <div style={{ width: '100%', height: '100%', overflow: 'hidden', position: 'fixed', top: 0, left: 0 }} className="bg-[#07090e] text-gray-200 flex flex-col font-sans">
+    <div data-theme={user.preferred_theme || 'classic'} style={{ width: '100%', height: '100%', overflow: 'hidden', position: 'fixed', top: 0, left: 0 }} className="bg-[var(--bg-main)] text-[var(--text-primary)] flex flex-col font-sans transition-colors duration-300">
       
       {/* Top Navigation Bar (Mobile-First Ultra-Compact) */}
-      <nav className="flex items-center justify-between px-3 py-2 bg-[#07090e] shrink-0 border-b border-white/5 relative z-50">
+      <nav className="flex items-center justify-between px-3 py-2 bg-[var(--bg-main)] shrink-0 border-b border-[var(--border-color)] relative z-50">
          <div className="flex items-center gap-2">
              <div className="relative">
                  <div className="w-8 h-8 rounded-full border border-white/10 overflow-hidden bg-gradient-to-br from-gray-700 to-gray-800">
@@ -461,7 +461,7 @@ function MainApp() {
       <div className="flex-1 flex min-h-0 min-w-0 overflow-hidden p-4 md:p-6 pt-0 gap-6">
           
           {/* Sidebar */}
-          <aside className={`w-[280px] bg-[#12141c] rounded-3xl border border-white/5 flex flex-col min-h-0 shadow-[0_10px_30px_rgba(0,0,0,0.5)] relative overflow-hidden transition-all shrink-0 ${isSidebarOpen ? 'translate-x-0 absolute z-40 h-full left-0' : 'hidden md:flex'}`}>
+          <aside className={`w-[280px] bg-[var(--bg-sidebar)] rounded-3xl border border-[var(--border-color)] flex flex-col min-h-0 shadow-[0_10px_30px_var(--shadow-color)] relative overflow-hidden transition-all shrink-0 ${isSidebarOpen ? 'translate-x-0 absolute z-40 h-full left-0' : 'hidden md:flex'}`}>
               
               {/* Inner ambient glow for sidebar */}
               <div className="absolute top-0 left-1/2 -translate-x-1/2 w-48 h-48 bg-cyan-500/10 blur-[60px] rounded-full pointer-events-none"></div>
@@ -552,13 +552,13 @@ function MainApp() {
           </aside>
 
           {/* Main Chat Container */}
-          <main className="flex-1 min-w-0 min-h-0 rounded-3xl relative flex flex-col bg-[#0f111a] overflow-hidden shadow-[0_0_30px_rgba(6,182,212,0.1)] border"
-                style={{ background: chatBg ? `url(${chatBg}) center/cover no-repeat` : 'linear-gradient(#0f111a, #0f111a) padding-box, linear-gradient(135deg, #06b6d4 0%, #a855f7 100%) border-box', border: '1px solid transparent' }}>
+          <main className="flex-1 min-w-0 min-h-0 rounded-3xl relative flex flex-col bg-[var(--bg-main)] overflow-hidden shadow-[0_0_30px_var(--shadow-glow)] border"
+                style={{ background: chatBg ? `url(${chatBg}) center/cover no-repeat` : 'var(--bg-main)', borderColor: 'var(--border-color)' }}>
               
               {/* Outer gradient border illusion via linear-gradient using a wrapper, but implemented directly on container above with box-shadow */}
               
               {/* Chat Header */}
-              <div className="flex items-center justify-between px-3 py-2 border-b border-white/5 bg-[#0f111a]/80 backdrop-blur-md z-10 shrink-0">
+              <div className="flex items-center justify-between px-3 py-2 border-b border-[var(--border-color)] bg-[var(--bg-main)] backdrop-blur-md z-10 shrink-0">
                   <div className="flex items-center gap-2">
                      <button onClick={() => setIsSidebarOpen(!isSidebarOpen)} className="md:hidden text-gray-400 hover:text-white">
                        <Menu size={20} />
@@ -648,40 +648,42 @@ function MainApp() {
                   {messages.filter((m, i, arr) => 
                      m && m.sender && !(i > 0 && m.sender === 'Elizabeth' && arr[i-1] && m.text === arr[i-1].text)
                   ).map((m, idx) => {
+                     const isMine = m.sender === user.username;
                      const isLiz = m.sender === 'Elizabeth' || m.isAi;
                      const date = m.createdAt?.toDate ? m.createdAt.toDate() : new Date();
                      const timeStr = isNaN(date.getTime()) ? `10:0${idx % 10}` : date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
                      const senderUser = usersOnline.find(u => u.username === m.sender);
 
                      return (
-                         <div key={m.id || idx} className="text-sm font-medium leading-relaxed font-sans group">
-                            <span className="text-gray-500 mr-2 text-xs font-normal">[{timeStr}]</span>
-                            <span className={`font-bold mr-2 ${isLiz ? 'text-cyan-400' : 'text-blue-300'}`}>
-                               {isLiz ? 'ELIZABETH' : m.sender}
-                               {!isLiz && senderUser?.awards?.map((award, i) => (
-                                  <span key={i} className="text-[10px] ml-1">{award}</span>
-                               ))}
-                               :
-                            </span>
-                            <span className={isLiz ? 'text-gray-200' : 'text-gray-300'}>
-                               {isLiz ? `"${m.text}"` : m.text}
-                            </span>
-                            {m.image && <div className="mt-2 ml-2"><img src={m.image} className="rounded-xl border border-white/10 max-w-[200px] shadow-sm" alt="adjunto"/></div>}
-                            {(m.type === 'audio' || m.audio) && <div className="mt-2 ml-2 bg-[#13151f] p-1 rounded-xl inline-block border border-white/5"><audio src={m.audio} controls className="h-6 max-w-[200px] filter opacity-90" /></div>}
+                         <div key={m.id || idx} className={`flex flex-col mb-4 ${isMine ? 'items-end' : 'items-start'}`}>
+                            <div className="flex items-center gap-2 mb-1 px-1">
+                               <span className={`text-[10px] font-bold uppercase tracking-wider ${isMine ? 'text-[var(--text-accent)]' : isLiz ? 'text-[var(--text-accent)]' : 'text-[var(--text-secondary)]'}`}>
+                                  {isLiz ? 'ELIZABETH' : m.sender}
+                                  {!isLiz && senderUser?.awards?.map((award, i) => (
+                                     <span key={i} className="text-[10px] ml-1">{award}</span>
+                                  ))}
+                               </span>
+                               <span className="text-[9px] text-[var(--text-secondary)] opacity-70">{timeStr}</span>
+                            </div>
+                            <div className={`px-4 py-2.5 max-w-[85%] sm:max-w-[70%] break-words shadow-sm border border-[var(--border-color)] ${isMine ? 'bg-[var(--bubble-sent)] text-[var(--bubble-text)] rounded-2xl rounded-tr-sm' : 'bg-[var(--bubble-recv)] text-[var(--bubble-text)] rounded-2xl rounded-tl-sm'}`}>
+                               {m.text}
+                               {m.image && <div className="mt-2"><img src={m.image} className="rounded-xl border border-[var(--border-color)] max-w-[200px] shadow-sm" alt="adjunto"/></div>}
+                               {(m.type === 'audio' || m.audio) && <div className="mt-2 bg-[var(--bg-input)] p-1 rounded-xl inline-block border border-[var(--border-color)]"><audio src={m.audio} controls className="h-6 max-w-[200px] filter opacity-90" /></div>}
+                            </div>
                          </div>
                      );
                   })}
 
                   {/* Typing Indicator */}
                   {typingUsers[activeChat] && typingUsers[activeChat].length > 0 && (
-                     <div className="flex flex-col gap-0.5 mb-2">
+                     <div className="flex flex-col gap-0.5 mb-2 px-2">
                         {typingUsers[activeChat].includes("Elizabeth") && (
-                           <div className="text-cyan-400 text-xs font-medium italic flex items-center">
+                           <div className="text-[var(--text-accent)] text-xs font-medium italic flex items-center">
                               ELIZABETH escribiendo<span className="ml-1 flex gap-0.5"><span className="animate-bounce">.</span><span className="animate-bounce" style={{animationDelay: '0.2s'}}>.</span><span className="animate-bounce" style={{animationDelay: '0.4s'}}>.</span></span>
                            </div>
                         )}
                         {typingUsers[activeChat].filter(u => u !== "Elizabeth").length > 0 && (
-                           <div className="text-gray-400 text-xs font-medium italic">
+                           <div className="text-[var(--text-secondary)] text-xs font-medium italic">
                               {typingUsers[activeChat].filter(u => u !== "Elizabeth").join(", ")} escribiendo...
                            </div>
                         )}
@@ -690,7 +692,7 @@ function MainApp() {
 
                   {activeChat !== 'global' && activeChat !== 'pluma' && activeChat !== 'fama' && readReceipts[activeChat] && messages.length > 0 && messages[messages.length - 1].sender === user.username && (
                       <div className="flex justify-end mt-1 mb-2 px-2 animate-in fade-in">
-                          <span className="text-[10px] text-cyan-400/80 font-medium flex items-center gap-1">✓ Visto</span>
+                          <span className="text-[10px] text-[var(--text-accent)] opacity-80 font-medium flex items-center gap-1">✓ Visto</span>
                       </div>
                   )}
 
@@ -698,7 +700,7 @@ function MainApp() {
               </div>
 
               {/* Input Area */}
-              <div className="px-3 py-3 shrink-0 bg-[#0f111a]/90 backdrop-blur-md relative z-10 border-t border-white/5">
+              <div className="px-3 py-3 shrink-0 bg-[var(--bg-main)]/90 backdrop-blur-md relative z-10 border-t border-[var(--border-color)]">
                   {(selectedImage || audioUrl || selectedGif) && (
                     <div className="flex gap-2 mb-2">
                       {selectedImage && (
@@ -724,19 +726,19 @@ function MainApp() {
 
                   <div className="flex items-center gap-2 relative">
                       <input type="file" accept="image/*" className="hidden" ref={fileInputRef} onChange={handleImageSelect} />
-                      <div className="flex-1 bg-transparent border border-gray-600 rounded-2xl flex items-center px-3 py-1 relative focus-within:border-cyan-500/50 transition-all">
+                      <div className="flex-1 bg-[var(--bg-input)] border border-[var(--border-color)] rounded-2xl flex items-center px-3 py-1 relative focus-within:border-[var(--text-accent)] transition-all">
                           <input 
                              value={inputValue}
                              onChange={handleInputChange}
                              onKeyDown={e => {
                                 if (e.key === 'Enter') handleSendMessage();
                              }}
-                             className="w-full bg-transparent outline-none text-gray-200 placeholder-gray-500 text-sm py-1" 
+                             className="w-full bg-transparent outline-none text-[var(--text-primary)] placeholder-[var(--text-secondary)] text-sm py-1" 
                              placeholder="Mensaje..."
                           />
-                          <div className="flex items-center gap-2 text-gray-400 ml-2">
-                              <Smile onClick={() => setShowEmojiPicker(!showEmojiPicker)} size={18} className="hover:text-cyan-400 cursor-pointer transition-colors" />
-                              <Paperclip onClick={() => fileInputRef.current?.click()} size={18} className="hover:text-cyan-400 cursor-pointer transition-colors" />
+                          <div className="flex items-center gap-2 text-[var(--text-secondary)] ml-2">
+                              <Smile onClick={() => setShowEmojiPicker(!showEmojiPicker)} size={18} className="hover:text-[var(--text-accent)] cursor-pointer transition-colors" />
+                              <Paperclip onClick={() => fileInputRef.current?.click()} size={18} className="hover:text-[var(--text-accent)] cursor-pointer transition-colors" />
                           </div>
                       </div>
                       
@@ -755,11 +757,11 @@ function MainApp() {
                       <button 
                         onClick={handleSendMessage} 
                         disabled={!inputValue.trim() && !selectedImage && !audioUrl && !selectedGif}
-                        className="bg-gradient-to-r from-[#0d9488] to-[#0891b2] rounded-xl h-9 w-9 flex items-center justify-center disabled:opacity-50 shrink-0"
+                        className="bg-[var(--text-accent)] rounded-xl h-9 w-9 flex items-center justify-center disabled:opacity-50 shrink-0"
                       >
                         <Send size={16} className="text-white ml-0.5" />
                       </button>
-                      <button onClick={isRecording ? stopRecording : startRecording} className={`flex items-center justify-center rounded-xl h-9 w-9 bg-[#1a1c26] border border-white/10 shrink-0 transition-all ${isRecording ? 'text-red-500 bg-red-500/10' : 'text-gray-400 hover:text-white'}`}>
+                      <button onClick={isRecording ? stopRecording : startRecording} className={`flex items-center justify-center rounded-xl h-9 w-9 bg-[var(--bg-input)] border border-[var(--border-color)] shrink-0 transition-all ${isRecording ? 'text-red-500 bg-red-500/10' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'}`}>
                           {isRecording ? <StopCircle size={16} className="animate-pulse" /> : <Mic size={16} />}
                       </button>
                   </div>

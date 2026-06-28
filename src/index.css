@@ -4,10 +4,77 @@
 @theme {
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
   --font-display: "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
+  --color-theme-bg-main: var(--bg-main);
+  --color-theme-bg-sidebar: var(--bg-sidebar);
+  --color-theme-bg-modal: var(--bg-modal);
+  --color-theme-bg-card: var(--bg-card);
+  --color-theme-bg-input: var(--bg-input);
+  --color-theme-text-primary: var(--text-primary);
+  --color-theme-text-secondary: var(--text-secondary);
+  --color-theme-text-accent: var(--text-accent);
+  --color-theme-border: var(--border-color);
+  --color-theme-bubble-sent: var(--bubble-sent);
+  --color-theme-bubble-recv: var(--bubble-recv);
+  --color-theme-bubble-text: var(--bubble-text);
+  --color-theme-shadow: var(--shadow-color);
+  --color-theme-shadow-glow: var(--shadow-glow);
+}
+
+@layer base {
+  :root, [data-theme="classic"] {
+    --bg-main: #07090e;
+    --bg-sidebar: #12141c;
+    --bg-modal: #12141c;
+    --bg-card: #0a0a16;
+    --bg-input: #13151f;
+    --text-primary: #e5e7eb;
+    --text-secondary: #9ca3af;
+    --text-accent: #22d3ee;
+    --border-color: rgba(255, 255, 255, 0.05);
+    --bubble-sent: rgba(34, 211, 238, 0.1); /* cyan-400/10 */
+    --bubble-recv: rgba(255, 255, 255, 0.05);
+    --bubble-text: #e5e7eb;
+    --shadow-color: rgba(0, 0, 0, 0.5);
+    --shadow-glow: rgba(6, 182, 212, 0.3);
+  }
+
+  [data-theme="pastel"] {
+    --bg-main: #FFF5E1;
+    --bg-sidebar: #FFF9ED;
+    --bg-modal: #FFF9ED;
+    --bg-card: #FFFFFF;
+    --bg-input: #FFFFFF;
+    --text-primary: #4b5563;
+    --text-secondary: #6b7280;
+    --text-accent: #10b981;
+    --border-color: rgba(0, 0, 0, 0.05);
+    --bubble-sent: #d1fae5;
+    --bubble-recv: #e0e7ff;
+    --bubble-text: #1f2937;
+    --shadow-color: rgba(0, 0, 0, 0.05);
+    --shadow-glow: transparent;
+  }
+
+  [data-theme="night"] {
+    --bg-main: #0b1120;
+    --bg-sidebar: #111827;
+    --bg-modal: #111827;
+    --bg-card: #1f2937;
+    --bg-input: #1f2937;
+    --text-primary: #f3f4f6;
+    --text-secondary: #9ca3af;
+    --text-accent: #3b82f6;
+    --border-color: rgba(255, 255, 255, 0.1);
+    --bubble-sent: #374151;
+    --bubble-recv: #1f2937;
+    --bubble-text: #f9fafb;
+    --shadow-color: rgba(0, 0, 0, 0.3);
+    --shadow-glow: transparent;
+  }
 }
 
 body {
   font-family: var(--font-sans);
-  background-color: #000;
-  color: #fff;
+  background-color: var(--bg-main);
+  color: var(--text-primary);
 }
