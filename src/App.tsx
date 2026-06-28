@@ -3,7 +3,7 @@ import {
   Send, User, MessageCircle, Settings, Bot, 
   Image as ImageIcon, Mic, StopCircle, 
   Menu, X, Hash, MessageSquare, LogOut, Search,
-  Paperclip, Smile, Globe, Box
+  Paperclip, Smile, Globe, Box, Volume2, VolumeX
 } from 'lucide-react';
 import { collection, onSnapshot, query, doc } from 'firebase/firestore';
 import { db } from './firebaseConfig';
@@ -13,31 +13,37 @@ import { Login } from './components/Login';
 import { RecoveryModal } from './components/RecoveryModal';
 import { ProfileConfigModal } from './components/ProfileConfigModal';
 import { AdminConfigLizModal } from './components/AdminConfigLizModal';
+import { EmojiGifPicker } from './components/EmojiGifPicker';
 
 class ErrorBoundary extends React.Component<any, any> {
   constructor(props: any) {
     super(props);
+    // @ts-ignore
     this.state = { hasError: false, error: null };
   }
 
-  static getDerivedStateFromError(error: Error) {
+  static getDerivedStateFromError(error: any) {
     return { hasError: true, error };
   }
 
-  componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+  componentDidCatch(error: any, errorInfo: any) {
     console.error("ErrorBoundary caught an error", error, errorInfo);
   }
 
   render() {
+    // @ts-ignore
     if (this.state.hasError) {
       return (
         <div style={{ padding: '20px', background: 'red', color: 'white', zIndex: 9999, position: 'relative' }}>
           <h1>Algo salió mal en la aplicación.</h1>
+          {/* @ts-ignore */}
           <pre>{this.state.error?.toString()}</pre>
+          {/* @ts-ignore */}
           <pre>{this.state.error?.stack}</pre>
         </div>
       );
     }
+    // @ts-ignore
     return this.props.children;
   }
 }
@@ -68,13 +74,39 @@ function MainApp() {
   const [newPassword, setNewPassword] = useState('');
 
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [selectedGif, setSelectedGif] = useState<string | null>(null);
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
+  const [isMusicPlaying, setIsMusicPlaying] = useState(false);
   
   const fileInputRef = useRef<HTMLInputElement>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioRef = useRef<HTMLAudioElement>(null);
   const audioChunks = useRef<BlobPart[]>([]);
   const bottomRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (audio) {
+      if (isMusicPlaying) audio.play().catch(e => console.log("Autoplay prevented:", e));
+      else audio.pause();
+    }
+  }, [isMusicPlaying]);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+       setMessages(prev => {
+          const twelveMinAgo = Date.now() - 12 * 60 * 1000;
+          const filtered = prev.filter(m => {
+             const time = m.createdAt?.seconds ? m.createdAt.seconds * 1000 : (typeof m.createdAt === 'number' ? m.createdAt : Date.now());
+             return time > twelveMinAgo;
+          });
+          return filtered.length !== prev.length ? filtered : prev;
+       });
+    }, 30000); // Check every 30s
+    return () => clearInterval(interval);
+  }, []);
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -213,11 +245,12 @@ function MainApp() {
   }, [isLoggedIn, activeChat, user.username]);
 
   const handleSendMessage = () => {
-    if (!inputValue.trim() && !selectedImage && !audioUrl) return;
+    if (!inputValue.trim() && !selectedImage && !audioUrl && !selectedGif) return;
     
     const msgId = Date.now().toString() + Math.random().toString(36).substr(2, 5);
     const payload: any = { text: inputValue, id: msgId };
     if (selectedImage) payload.image = selectedImage;
+    if (selectedGif) payload.image = selectedGif;
     if (audioUrl) payload.audio = audioUrl;
 
     if (activeChat === 'global') {
@@ -248,7 +281,9 @@ function MainApp() {
     // Limpieza inmediata del input para evitar sensación de "congelamiento"
     setInputValue('');
     setSelectedImage(null);
+    setSelectedGif(null);
     setAudioUrl(null);
+    setShowEmojiPicker(false);
   };
 
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -513,12 +548,18 @@ function MainApp() {
 
               {/* Input Area */}
               <div className="px-6 py-5 shrink-0 bg-[#0f111a]/90 backdrop-blur-md relative z-10">
-                  {(selectedImage || audioUrl) && (
+                  {(selectedImage || audioUrl || selectedGif) && (
                     <div className="flex gap-4 mb-4">
                       {selectedImage && (
                         <div className="relative inline-block animate-in fade-in slide-in-from-bottom-2">
                            <img src={selectedImage} alt="Preview" className="h-20 w-20 rounded-xl border-2 border-cyan-500 object-cover shadow-lg" />
                            <button onClick={() => setSelectedImage(null)} className="absolute -top-3 -right-3 bg-red-500 hover:bg-red-600 transition-colors text-white rounded-full p-1.5 shadow-xl"><X size={14} /></button>
+                        </div>
+                      )}
+                      {selectedGif && (
+                        <div className="relative inline-block animate-in fade-in slide-in-from-bottom-2">
+                           <img src={selectedGif} alt="GIF Preview" className="h-20 w-20 rounded-xl border-2 border-cyan-500 object-cover shadow-lg" />
+                           <button onClick={() => setSelectedGif(null)} className="absolute -top-3 -right-3 bg-red-500 hover:bg-red-600 transition-colors text-white rounded-full p-1.5 shadow-xl"><X size={14} /></button>
                         </div>
                       )}
                       {audioUrl && (
@@ -530,7 +571,7 @@ function MainApp() {
                     </div>
                   )}
 
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-3 relative">
                       <input type="file" accept="image/*" className="hidden" ref={fileInputRef} onChange={handleImageSelect} />
                       <div className="flex-1 bg-transparent border border-gray-600 rounded-full flex items-center px-4 py-1.5 relative shadow-inner focus-within:border-cyan-500/50 transition-all">
                           <input 
@@ -543,13 +584,27 @@ function MainApp() {
                              placeholder="Escribe tu mensaje... @Elizabeth para hablar 😉"
                           />
                           <div className="flex items-center gap-3 text-gray-400 ml-3 mr-2">
-                              <Smile size={20} className="hover:text-cyan-400 cursor-pointer transition-colors" />
+                              <button onClick={() => setIsMusicPlaying(!isMusicPlaying)} className="hover:text-cyan-400 transition-colors">
+                                 {isMusicPlaying ? <Volume2 size={20} /> : <VolumeX size={20} />}
+                              </button>
+                              <Smile onClick={() => setShowEmojiPicker(!showEmojiPicker)} size={20} className="hover:text-cyan-400 cursor-pointer transition-colors" />
                               <Paperclip onClick={() => fileInputRef.current?.click()} size={20} className="hover:text-cyan-400 cursor-pointer transition-colors" />
                           </div>
                       </div>
+                      
+                      {showEmojiPicker && (
+                         <EmojiGifPicker 
+                           onSelect={(type, val) => {
+                              if (type === 'emoji') setInputValue(prev => prev + val);
+                              if (type === 'gif') setSelectedGif(val);
+                           }} 
+                           onClose={() => setShowEmojiPicker(false)} 
+                         />
+                      )}
+
                       <button 
                         onClick={handleSendMessage} 
-                        disabled={!inputValue.trim() && !selectedImage && !audioUrl}
+                        disabled={!inputValue.trim() && !selectedImage && !audioUrl && !selectedGif}
                         className="bg-gradient-to-r from-[#0d9488] to-[#0891b2] rounded-full h-[46px] w-[46px] flex items-center justify-center shadow-[0_0_15px_rgba(6,182,212,0.4)] disabled:opacity-50 disabled:shadow-none hover:shadow-[0_0_25px_rgba(6,182,212,0.6)] transition-all shrink-0 ml-2"
                       >
                         <Send size={20} className="text-white ml-0.5" />
@@ -561,6 +616,8 @@ function MainApp() {
               </div>
           </main>
       </div>
+
+      <audio ref={audioRef} src="https://cdn.pixabay.com/download/audio/2022/05/27/audio_1808fbf07a.mp3" loop preload="none" />
 
       {isConfigOpen && (
         <ProfileConfigModal

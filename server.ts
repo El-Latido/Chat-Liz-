@@ -493,11 +493,11 @@ async function startServer() {
           
           let contextMsgs = [];
           if (fdb) {
-             const recentQ = query(collection(fdb, 'messages'), orderBy('createdAt', 'desc'), limit(15));
+             const recentQ = query(collection(fdb, 'messages'), orderBy('createdAt', 'desc'), limit(3));
              const snapshot = await getDocs(recentQ);
              contextMsgs = snapshot.docs.map(doc => doc.data()).reverse();
           } else {
-             contextMsgs = fallbackState.globalMessages.slice(-15);
+             contextMsgs = fallbackState.globalMessages.slice(-3);
           }
           
           let parts: any[] = [{ text: `Historial de chat reciente:\n` + contextMsgs.map((m: any) => `[${new Date(m.createdAt?.seconds ? m.createdAt.seconds * 1000 : (typeof m.createdAt === 'number' ? m.createdAt : Date.now())).toLocaleTimeString()}] ${m.sender}: ${m.text}`).join("\n") + `\n\nResponde al último mensaje de ${currentUsername}.` }];
@@ -528,9 +528,6 @@ Regla final: NO incluyas prefijos como 'Elizabeth:' al inicio de tu mensaje.`;
 
           const sysInstruction = aiUserTempCache?.systemInstruction ? `${baseSysInstruction}\n\nInstrucciones adicionales del Administrador:\n${aiUserTempCache.systemInstruction}` : baseSysInstruction;
 
-          console.log("=== ENVIANDO A GEMINI ===");
-          console.log(JSON.stringify(parts, null, 2));
-          
           let response: any;
           try {
              // Promise race to simulate a 30s timeout
@@ -546,13 +543,14 @@ Regla final: NO incluyas prefijos como 'Elizabeth:' al inicio de tu mensaje.`;
              });
              
              response = await Promise.race([fetchPromise, timeoutPromise]);
-          } catch (apiError) {
-             console.error("=== ERROR API GEMINI ===", apiError);
-             response = { text: "" };
+          } catch (apiError: any) {
+             console.error("=== ERROR API GEMINI ===", apiError.message || apiError);
+             if (apiError.status === 429 || apiError.message?.includes("429")) {
+                response = { text: "ELIZABETH está descansando sus circuitos, vuelve en un rato." };
+             } else {
+                response = { text: "" };
+             }
           }
-          
-          console.log("=== RESPUESTA DE GEMINI ===");
-          console.log(response?.text);
           
           let rawText = response?.text || "";
           let cleanText = rawText.replace(/^Elizabeth:\s*/i, '').trim();
@@ -732,20 +730,17 @@ Regla final: NO incluyas prefijos como 'Elizabeth:' al inicio de tu mensaje.`;
           if (fdb) {
              const participants = [currentUsername, "Elizabeth"].sort();
              const convoId = participants.join("_");
-             const recentQ = query(collection(fdb, 'private_messages', convoId, 'messages'), orderBy('createdAt', 'desc'), limit(15));
+             const recentQ = query(collection(fdb, 'private_messages', convoId, 'messages'), orderBy('createdAt', 'desc'), limit(3));
              const snapshot = await getDocs(recentQ);
              contextMsgs = snapshot.docs.map(doc => doc.data()).reverse();
           }
           
-          let parts: any[] = [{ text: `Historial de chat reciente:\n` + contextMsgs.map((m: any) => `[${new Date(m.createdAt?.seconds ? m.createdAt.seconds * 1000 : (typeof m.createdAt === 'number' ? m.createdAt : Date.now())).toLocaleTimeString()}] ${m.sender}: ${m.text}`).join("\n") + `\n\nResponde al último mensaje de ${currentUsername}: ${msg.text}` }];
+          let parts: any[] = [{ text: `Historial reciente:\n` + contextMsgs.map((m: any) => `[${new Date(m.createdAt?.seconds ? m.createdAt.seconds * 1000 : (typeof m.createdAt === 'number' ? m.createdAt : Date.now())).toLocaleTimeString()}] ${m.sender}: ${m.text}`).join("\n") + `\n\nResponde al último mensaje de ${currentUsername}: ${msg.text}` }];
           if (msg.image && msg.image.startsWith('data:image')) {
              const base64Data = msg.image.split(',')[1];
              const mimeType = msg.image.match(/data:(.*?);/)?.[1] || 'image/jpeg';
              parts.push({ inlineData: { data: base64Data, mimeType } });
           }
-
-          console.log("=== ENVIANDO A GEMINI (PRIVADO) ===");
-          console.log(JSON.stringify(parts, null, 2));
 
           let response: any;
           try {
@@ -758,13 +753,14 @@ Regla final: NO incluyas prefijos como 'Elizabeth:' al inicio de tu mensaje.`;
                config: { systemInstruction: sysInstruction }
              });
              response = await Promise.race([fetchPromise, timeoutPromise]);
-          } catch (apiError) {
-             console.error("=== ERROR API GEMINI (PRIVADO) ===", apiError);
-             response = { text: "" };
+          } catch (apiError: any) {
+             console.error("=== ERROR API GEMINI (PRIVADO) ===", apiError.message || apiError);
+             if (apiError.status === 429 || apiError.message?.includes("429")) {
+                response = { text: "ELIZABETH está descansando sus circuitos, vuelve en un rato." };
+             } else {
+                response = { text: "" };
+             }
           }
-          
-          console.log("=== RESPUESTA DE GEMINI (PRIVADO) ===");
-          console.log(response?.text);
           
           let rawText = response?.text || "";
           let cleanText = rawText.replace(/^Elizabeth:\s*/i, '').trim();
