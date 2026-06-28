@@ -76,8 +76,9 @@ export function ProfileConfigModal({
   };
 
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="bg-[#12141c] p-6 lg:p-8 rounded-3xl w-full max-w-md shadow-2xl relative border border-white/10 max-h-[90vh] overflow-y-auto scrollbar-thin">
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-end justify-center sm:items-center p-0 sm:p-4 animate-in fade-in">
+      <div className="bg-[#12141c] p-6 lg:p-8 rounded-t-3xl sm:rounded-3xl w-full max-w-md shadow-2xl relative border-t border-x sm:border-b border-white/10 max-h-[85vh] overflow-y-auto scrollbar-thin animate-in slide-in-from-bottom-full sm:slide-in-from-bottom-10">
+        <div className="w-12 h-1 bg-white/20 rounded-full mx-auto mb-6 sm:hidden"></div>
         <button onClick={() => setIsConfigOpen(false)} className="absolute top-4 right-4 text-gray-400 hover:text-white bg-white/5 hover:bg-white/10 p-2 rounded-full transition-colors">
            <X size={20} />
         </button>
