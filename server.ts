@@ -56,6 +56,11 @@ async function startServer() {
 
   app.use(express.json({ limit: "50mb" }));
 
+  const SERVER_VERSION = Date.now().toString();
+  app.get("/version", (req, res) => {
+    res.json({ version: SERVER_VERSION });
+  });
+
   const uploadsDir = path.join(process.cwd(), "static", "uploads");
   if (!fs.existsSync(uploadsDir)) {
     fs.mkdirSync(uploadsDir, { recursive: true });

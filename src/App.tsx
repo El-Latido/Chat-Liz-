@@ -48,6 +48,26 @@ class ErrorBoundary extends React.Component<any, any> {
   }
 }
 
+let currentVersion: string | null = null;
+
+function checkVersion() {
+    fetch('/version')
+        .then(response => response.json())
+        .then(data => {
+            if (currentVersion === null) {
+                currentVersion = data.version;
+            } else if (data.version !== currentVersion) {
+                // Se detectó una nueva versión, recargar solo si no hay mensaje en progreso
+                console.log("Nueva actualización detectada. Recargando...");
+                window.location.reload();
+            }
+        })
+        .catch(err => console.error("Error verificando versión:", err));
+}
+
+// Verificar cada 15 segundos
+setInterval(checkVersion, 15000);
+
 function MainApp() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [user, setUser] = useState<UserObj & {password?: string, securityEmail?: string}>({ username: '', password: '', countryLanguage: 'es', securityEmail: '' });
@@ -494,13 +514,18 @@ function MainApp() {
                         {activeChat === 'global' && <span className="text-sm font-normal text-gray-500 ml-1">({usersOnline.filter(u => u.username !== 'Elizabeth').length + 1} usuarios online)</span>}
                      </h2>
                   </div>
-                  {activeChat === 'global' && (
-                     <button className="hidden md:flex items-center gap-2 text-gray-400 bg-transparent border border-white/10 px-4 py-1.5 rounded-full hover:bg-white/5 transition-all text-sm font-medium">
-                        <MessageSquare size={16} />
-                        Private chat
-                        <Search size={16} className="ml-1 opacity-50" />
+                  <div className="flex items-center gap-3">
+                     <button id="music-toggle" onClick={() => setIsMusicPlaying(!isMusicPlaying)} className="text-gray-400 hover:text-cyan-400 transition-colors p-2 rounded-full hover:bg-white/5">
+                        {isMusicPlaying ? <Volume2 size={20} /> : <VolumeX size={20} />}
                      </button>
-                  )}
+                     {activeChat === 'global' && (
+                        <button className="hidden md:flex items-center gap-2 text-gray-400 bg-transparent border border-white/10 px-4 py-1.5 rounded-full hover:bg-white/5 transition-all text-sm font-medium">
+                           <MessageSquare size={16} />
+                           Private chat
+                           <Search size={16} className="ml-1 opacity-50" />
+                        </button>
+                     )}
+                  </div>
               </div>
 
               {/* Chat Feed */}
@@ -584,9 +609,6 @@ function MainApp() {
                              placeholder="Escribe tu mensaje... @Elizabeth para hablar 😉"
                           />
                           <div className="flex items-center gap-3 text-gray-400 ml-3 mr-2">
-                              <button onClick={() => setIsMusicPlaying(!isMusicPlaying)} className="hover:text-cyan-400 transition-colors">
-                                 {isMusicPlaying ? <Volume2 size={20} /> : <VolumeX size={20} />}
-                              </button>
                               <Smile onClick={() => setShowEmojiPicker(!showEmojiPicker)} size={20} className="hover:text-cyan-400 cursor-pointer transition-colors" />
                               <Paperclip onClick={() => fileInputRef.current?.click()} size={20} className="hover:text-cyan-400 cursor-pointer transition-colors" />
                           </div>
@@ -617,7 +639,7 @@ function MainApp() {
           </main>
       </div>
 
-      <audio ref={audioRef} src="https://cdn.pixabay.com/download/audio/2022/05/27/audio_1808fbf07a.mp3" loop preload="none" />
+      <audio id="bg-music" ref={audioRef} src="https://cdn.pixabay.com/download/audio/2022/05/27/audio_1808fbf07a.mp3" loop preload="none" />
 
       {isConfigOpen && (
         <ProfileConfigModal
