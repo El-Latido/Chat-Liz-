@@ -13,6 +13,7 @@ export interface UserObj {
   is_friends_public?: boolean;
   awards?: string[];
   preferred_theme?: string;
+  preferred_background?: string;
 }
 
 export interface PlumaGameState {

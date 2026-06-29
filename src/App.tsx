@@ -90,7 +90,7 @@ function MainApp() {
   const [plumaState, setPlumaState] = useState<any>({ isActive: false, timerEndTime: 0, phrases: [] });
   const [hallOfFame, setHallOfFame] = useState<any[]>([]);
   const [showFamaModal, setShowFamaModal] = useState(false);
-  const chatBg = localStorage.getItem('chatBg');
+  const chatBg = user.preferred_background;
 
   // Recovery States
   const [recoveryModalOpen, setRecoveryModalOpen] = useState(false);
@@ -134,6 +134,14 @@ function MainApp() {
     }, 30000); // Check every 30s
     return () => clearInterval(interval);
   }, []);
+  const addMessage = (prev: MessageObj[], newMsg: MessageObj) => {
+      const next = [...prev, newMsg];
+      if (next.length > 15) {
+         return next.slice(next.length - 15);
+      }
+      return next;
+  };
+
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -184,17 +192,15 @@ function MainApp() {
       });
     } else {
       socket.emit('get_private_history', activeChat, (historyMsgs: any[]) => {
-        setMessages(historyMsgs);
+        setMessages(historyMsgs.slice(-15));
         setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
-        socket.emit("read_messages", { targetUser: activeChat });
       });
     }
     
     socket.on('receive_global', (msg: any) => {
       if (activeChat === 'global') {
           setMessages(prev => {
-             if (prev.some(m => m.id === msg.id)) return prev;
-             return [...prev, msg];
+             return prev.some(m => m.id === msg.id) ? prev : addMessage(prev, msg);
           });
           setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
       }
@@ -202,13 +208,20 @@ function MainApp() {
 
     socket.on('receive_private', (msg: any, fromUser: string) => {
       if (activeChat === fromUser) {
-        setMessages(prev => [...prev, msg]);
+        setMessages(prev => addMessage(prev, msg));
         setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
-        socket.emit("read_messages", { targetUser: activeChat });
       } else {
         setUnreadPMs(prev => ({ ...prev, [fromUser]: true }));
       }
     });
+
+    // Delay marking as read
+    if (activeChat !== 'global' && activeChat !== 'pluma') {
+      const timer = setTimeout(() => {
+         socket.emit("read_messages", { targetUser: activeChat });
+      }, 1000);
+      return () => clearTimeout(timer);
+    }
 
     socket.on('pluma_state', (state: any) => {
       setPlumaState(state);
@@ -308,12 +321,12 @@ function MainApp() {
 
     if (activeChat === 'global') {
       const optimisticMsg = { ...payload, sender: user.username, createdAt: Date.now() };
-      setMessages(prev => [...prev, optimisticMsg]);
+      setMessages(prev => addMessage(prev, optimisticMsg));
       setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
       socket.emit('send_global', payload);
     } else {
       const optimisticMsg = { ...payload, sender: user.username, createdAt: Date.now() };
-      setMessages(prev => [...prev, optimisticMsg]);
+      setMessages(prev => addMessage(prev, optimisticMsg));
       setReadReceipts(prev => ({...prev, [activeChat]: false}));
       setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
       
@@ -536,7 +549,11 @@ function MainApp() {
                                >
                                    <img src={u.profilePic || `https://api.dicebear.com/7.x/avataaars/svg?seed=${u.username}`} alt="avatar" className="w-full h-full object-cover" />
                                </div>
-                               <button className="text-left flex-1 truncate flex items-center gap-1" onClick={() => setActiveChat(u.username)}>
+                               <button className="text-left flex-1 truncate flex items-center gap-1" onClick={(e) => {
+                                 e.stopPropagation();
+                                 setActiveChat(u.username);
+                                 setIsFriendsSidebarOpen(false);
+                               }}>
                                  <span className="font-medium text-gray-300 text-[15px] truncate block">{u.username}</span>
                                  {u.awards && u.awards.map((award, idx) => (
                                      <span key={idx} className="text-xs">{award}</span>

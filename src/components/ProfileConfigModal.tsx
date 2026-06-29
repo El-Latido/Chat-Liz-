@@ -25,16 +25,12 @@ export function ProfileConfigModal({
   const [fotoURL, setFotoURL] = useState(user.profilePic || '');
   const [isFriendsPublic, setIsFriendsPublic] = useState(user.is_friends_public || false);
   const [theme, setTheme] = useState(user.preferred_theme || 'classic');
-  const [bgUrl, setBgUrl] = useState(localStorage.getItem('chatBg') || '');
+  const [backgroundBase64, setBackgroundBase64] = useState(user.preferred_background || '');
+  const [saveStatus, setSaveStatus] = useState<string | null>(null);
 
   const handleSaveProfile = async () => {
     try {
-      if (bgUrl) {
-         localStorage.setItem('chatBg', bgUrl);
-      } else {
-         localStorage.removeItem('chatBg');
-      }
-
+      setSaveStatus("Guardando...");
       // 1. Referencia al documento específico de este usuario en Firebase
       const userRef = doc(db, "users", user.username); 
 
@@ -45,7 +41,8 @@ export function ProfileConfigModal({
         statusMessage: comentario,
         pais_idioma: pais,
         is_friends_public: isFriendsPublic,
-        preferred_theme: theme
+        preferred_theme: theme,
+        preferred_background: backgroundBase64
       }, { merge: true });
 
       // Update local state (though onSnapshot will also catch it)
@@ -56,7 +53,8 @@ export function ProfileConfigModal({
         statusMessage: comentario,
         countryLanguage: pais,
         is_friends_public: isFriendsPublic,
-        preferred_theme: theme
+        preferred_theme: theme,
+        preferred_background: backgroundBase64
       }));
 
       // Aún emitimos a socket para otras cosas de conexión
@@ -68,13 +66,16 @@ export function ProfileConfigModal({
         statusMessage: comentario, 
         countryLanguage: pais,
         is_friends_public: isFriendsPublic,
-        preferred_theme: theme
+        preferred_theme: theme,
+        preferred_background: backgroundBase64
       }, () => {});
 
-      alert("¡Perfil guardado con éxito!");
-      setIsConfigOpen(false);
+      setSaveStatus("Tema guardado correctamente");
+      setTimeout(() => setSaveStatus(null), 3000);
+      // No longer reloading the page
     } catch (error) {
-      // En lugar de console.error, usamos un alert para verlo en el móvil
+      setSaveStatus("Error al guardar");
+      setTimeout(() => setSaveStatus(null), 3000);
       alert("Error: " + (error as Error).message); 
     }
   };
@@ -190,18 +191,26 @@ export function ProfileConfigModal({
           </div>
 
           <div className="space-y-2">
-            <label className="text-sm font-semibold text-[var(--text-secondary)]">Fondo del Chat (URL o dejar vacío)</label>
+            <label className="text-sm font-semibold text-[var(--text-secondary)]">Fondo del Chat</label>
             <div className="flex gap-2">
                <input 
-                  value={bgUrl}
-                  onChange={e => setBgUrl(e.target.value)}
-                  placeholder="https://..."
+                  type="file"
+                  accept="image/*"
+                  onChange={e => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      const reader = new FileReader();
+                      reader.onload = () => setBackgroundBase64(reader.result as string);
+                      reader.readAsDataURL(file);
+                    }
+                  }}
                   className="w-full bg-[var(--bg-input)] p-3 rounded-xl border border-[var(--border-color)] outline-none focus:border-[var(--text-accent)] transition-all text-[var(--text-primary)]" 
                />
-               <button onClick={() => setBgUrl('')} className="bg-[var(--bg-input)] hover:opacity-80 px-4 rounded-xl border border-[var(--border-color)] text-[var(--text-secondary)] text-xs">
+               <button onClick={() => setBackgroundBase64('')} className="bg-[var(--bg-input)] hover:opacity-80 px-4 rounded-xl border border-[var(--border-color)] text-[var(--text-secondary)] text-xs">
                   Restaurar
                </button>
             </div>
+            {backgroundBase64 && <img src={backgroundBase64} className="h-16 w-16 rounded-lg object-cover mt-2" alt="Background preview" />}
           </div>
           
           {user.username === 'Axiss' && (
@@ -214,6 +223,8 @@ export function ProfileConfigModal({
                 <Bot size={18} /> Configurar a HELIZABETH
              </button>
           )}
+
+          {saveStatus && <div className="text-center text-sm font-bold text-[var(--text-accent)] mt-2">{saveStatus}</div>}
 
           <button 
             onClick={handleSaveProfile}
