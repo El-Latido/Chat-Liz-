@@ -105,10 +105,14 @@ function MainApp() {
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
+  const [audioData, setAudioData] = useState<Uint8Array | null>(null);
   const [isMusicPlaying, setIsMusicPlaying] = useState(false);
   
   const fileInputRef = useRef<HTMLInputElement>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const analyserRef = useRef<AnalyserNode | null>(null);
+  const requestAnimationFrameRef = useRef<number | null>(null);
   const audioRef = useRef<HTMLAudioElement>(null);
   const audioChunks = useRef<BlobPart[]>([]);
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -369,15 +373,33 @@ function MainApp() {
       audioChunks.current = [];
       mediaRecorderRef.current.ondataavailable = (e) => audioChunks.current.push(e.data);
       mediaRecorderRef.current.onstop = () => {
-        const blob = new Blob(audioChunks.current, { type: 'audio/wav' });
+        const blob = new Blob(audioChunks.current, { type: 'audio/webm' });
         const reader = new FileReader();
         reader.readAsDataURL(blob);
         reader.onloadend = () => {
            setAudioUrl(reader.result as string);
         };
       };
+      
+      const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
+      audioContextRef.current = audioCtx;
+      const analyser = audioCtx.createAnalyser();
+      analyserRef.current = analyser;
+      analyser.fftSize = 64;
+      const source = audioCtx.createMediaStreamSource(stream);
+      source.connect(analyser);
+
+      const updateVisualizer = () => {
+         if (!analyserRef.current) return;
+         const dataArray = new Uint8Array(analyserRef.current.frequencyBinCount);
+         analyserRef.current.getByteFrequencyData(dataArray);
+         setAudioData(new Uint8Array(dataArray));
+         requestAnimationFrameRef.current = requestAnimationFrame(updateVisualizer);
+      };
+
       mediaRecorderRef.current.start();
       setIsRecording(true);
+      updateVisualizer();
     } catch (err) {
       alert("Error al acceder al micrófono");
     }
@@ -387,7 +409,15 @@ function MainApp() {
     if (mediaRecorderRef.current && isRecording) {
       mediaRecorderRef.current.stop();
       setIsRecording(false);
+      mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop());
     }
+    if (requestAnimationFrameRef.current) {
+        cancelAnimationFrame(requestAnimationFrameRef.current);
+    }
+    if (audioContextRef.current) {
+        audioContextRef.current.close();
+    }
+    setAudioData(null);
   };
 
   if (!isLoggedIn) {
@@ -421,19 +451,50 @@ function MainApp() {
   return (
     <div style={{ width: '100%', height: '100%', overflow: 'hidden', position: 'fixed', top: 0, left: 0 }} className="bg-[#07090e] text-gray-200 flex flex-col font-sans">
       
-      {/* Consolidated Navigation Bar */}
-      <nav className="flex items-center justify-between px-6 py-4 bg-white/5 backdrop-blur-lg border-b border-white/10 shrink-0">
-         <div className="flex items-center gap-4">
-             <div className="w-10 h-10 rounded-full border border-white/20 overflow-hidden bg-gradient-to-br from-indigo-500 to-purple-500">
-                 <img src={user.profilePic || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.username}`} alt="avatar" className="w-full h-full object-cover" />
+      {/* Top Navigation Bar (Mobile-First Ultra-Compact) */}
+      <nav className="flex items-center justify-between px-3 py-2 bg-[#07090e] shrink-0 border-b border-white/5 relative z-50">
+         <div className="flex items-center gap-2">
+             <div className="relative">
+                 <div className="w-8 h-8 rounded-full border border-white/10 overflow-hidden bg-gradient-to-br from-gray-700 to-gray-800">
+                     <img src={user.profilePic || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.username}`} alt="avatar" className="w-full h-full object-cover" />
+                 </div>
+                 <div className="absolute bottom-0 right-0 w-2 h-2 bg-green-500 rounded-full border border-[#07090e]"></div>
              </div>
-             <h1 className="text-xl font-bold text-white tracking-tight">Chat-Liz</h1>
+             <div className="flex flex-col justify-center">
+                 <h1 className="text-base font-bold text-white leading-none">Chat-Liz</h1>
+                 <span className="text-[10px] text-cyan-400 font-medium">En línea</span>
+             </div>
          </div>
 
          <div className="flex items-center gap-2">
-             <button onClick={() => setActiveChat('global')} className={`px-4 py-2 rounded-xl transition-all ${activeChat === 'global' ? 'bg-white/10 text-white' : 'text-gray-400 hover:text-white'}`}>Global</button>
-             <button onClick={() => setIsFriendsSidebarOpen(!isFriendsSidebarOpen)} className={`px-4 py-2 rounded-xl transition-all ${isFriendsSidebarOpen ? 'bg-white/10 text-white' : 'text-gray-400 hover:text-white'}`}>Amigos</button>
-             <button onClick={() => setIsConfigOpen(true)} className="px-4 py-2 rounded-xl text-gray-400 hover:text-white transition-all">Perfil</button>
+             <button 
+                onClick={() => { setActiveChat('global'); setUnreadPMs(prev => ({ ...prev, global: false })); }}
+                className={`p-2 rounded-xl transition-all ${activeChat === 'global' ? 'text-cyan-400 bg-cyan-500/10' : 'text-gray-400 hover:text-white'}`}
+             >
+                <Globe size={24} strokeWidth={1.5} />
+             </button>
+             <button 
+                onClick={() => { setActiveChat('pluma'); }}
+                className={`p-2 rounded-xl transition-all relative ${activeChat === 'pluma' ? 'text-fuchsia-400 bg-fuchsia-500/10' : 'text-gray-400 hover:text-white'}`}
+             >
+                <Bot size={24} strokeWidth={1.5} />
+                {plumaState.isActive && <div className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full animate-pulse border border-black"></div>}
+             </button>
+             <button 
+                onClick={() => { setIsFriendsSidebarOpen(!isFriendsSidebarOpen); }}
+                className={`p-2 rounded-xl transition-all relative ${(Object.values(unreadPMs).some(v => v) || (user.friend_requests && user.friend_requests.length > 0)) ? 'text-cyan-400 bg-cyan-500/10' : 'text-gray-400 hover:text-white'}`}
+             >
+                <Users size={24} strokeWidth={1.5} />
+                {(Object.values(unreadPMs).some(v => v) || (user.friend_requests && user.friend_requests.length > 0)) && (
+                   <div className="absolute top-1 right-1 w-2.5 h-2.5 bg-cyan-500 rounded-full border border-[#07090e] shadow-[0_0_10px_rgba(6,182,212,1)] animate-pulse"></div>
+                )}
+             </button>
+             <button 
+                onClick={() => setIsConfigOpen(true)}
+                className="p-2 rounded-xl text-gray-400 hover:text-white transition-all"
+             >
+                <Menu size={24} strokeWidth={1.5} />
+             </button>
          </div>
       </nav>
 
@@ -557,12 +618,7 @@ function MainApp() {
                   </div>
               </div>
 
-              {/* Bottom Navigation for Mobile */}
-              <div className="md:hidden flex justify-around p-3 bg-[#12141c] border-t border-white/5 shrink-0">
-                  <button onClick={() => setActiveChat('global')} className="text-gray-400">Global</button>
-                  <button onClick={() => setIsFriendsSidebarOpen(true)} className="text-gray-400">Amigos</button>
-                  <button onClick={() => setIsConfigOpen(true)} className="text-gray-400">Perfil</button>
-              </div>
+
 
               {activeChat === 'pluma' ? (
                  <div className="flex-1 flex flex-col items-center justify-start p-4 overflow-y-auto bg-black/60 relative">
@@ -690,8 +746,8 @@ function MainApp() {
 
               {/* Input Area */}
               <div className="px-3 py-3 shrink-0 bg-[var(--bg-main)]/90 backdrop-blur-md relative z-10 border-t border-[var(--border-color)]">
-                  {(selectedImage || audioUrl || selectedGif) && (
-                    <div className="flex gap-2 mb-2">
+                  {(selectedImage || audioUrl || selectedGif || isRecording) && (
+                    <div className="flex gap-2 mb-2 items-end">
                       {selectedImage && (
                         <div className="relative inline-block animate-in fade-in slide-in-from-bottom-2">
                            <img src={selectedImage} alt="Preview" className="h-12 w-12 rounded-lg border border-cyan-500 object-cover" />
@@ -708,6 +764,24 @@ function MainApp() {
                         <div className="relative flex items-center gap-2 bg-[#1a1c26] px-2 py-1 rounded-lg border border-white/10 animate-in fade-in slide-in-from-bottom-2">
                            <audio src={audioUrl} controls className="h-6 w-32 opacity-90" />
                            <button onClick={() => setAudioUrl(null)} className="absolute -top-2 -right-2 bg-red-500 hover:bg-red-600 transition-colors text-white rounded-full p-1"><X size={10} /></button>
+                        </div>
+                      )}
+                      {isRecording && (
+                        <div className="flex gap-1 items-end h-8 px-3 bg-[#12141c]/80 rounded-xl py-1 border border-cyan-500/30 animate-in fade-in">
+                           {audioData ? (
+                              Array.from(audioData).slice(0, 24).map((val, i) => (
+                                 <div 
+                                    key={i}
+                                    className="w-1 bg-cyan-400 rounded-full transition-all duration-75"
+                                    style={{ 
+                                       height: `${Math.max(4, (Number(val) / 255) * 24)}px`,
+                                       boxShadow: '0 0 10px #00f3ff, 0 0 20px #00f3ff'
+                                    }}
+                                 />
+                              ))
+                           ) : (
+                              <div className="text-cyan-400 text-xs font-bold animate-pulse">Escuchando...</div>
+                           )}
                         </div>
                       )}
                     </div>
