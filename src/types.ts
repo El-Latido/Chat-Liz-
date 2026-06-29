@@ -12,7 +12,6 @@ export interface UserObj {
   blocked_list?: string[];
   is_friends_public?: boolean;
   awards?: string[];
-  preferred_theme?: string;
   preferred_background?: string;
 }
 

@@ -419,10 +419,10 @@ function MainApp() {
   }
 
   return (
-    <div data-theme={user.preferred_theme || 'classic'} style={{ width: '100%', height: '100%', overflow: 'hidden', position: 'fixed', top: 0, left: 0 }} className="bg-[var(--bg-main)] text-[var(--text-primary)] flex flex-col font-sans transition-colors duration-300">
+    <div style={{ width: '100%', height: '100%', overflow: 'hidden', position: 'fixed', top: 0, left: 0 }} className="bg-[#07090e] text-gray-200 flex flex-col font-sans">
       
       {/* Top Navigation Bar (Mobile-First Ultra-Compact) */}
-      <nav className="flex items-center justify-between px-3 py-2 bg-[var(--bg-main)] shrink-0 border-b border-[var(--border-color)] relative z-50">
+      <nav className="flex items-center justify-between px-3 py-2 bg-[#07090e] shrink-0 border-b border-white/5 relative z-50">
          <div className="flex items-center gap-2">
              <div className="relative">
                  <div className="w-8 h-8 rounded-full border border-white/10 overflow-hidden bg-gradient-to-br from-gray-700 to-gray-800">
@@ -474,7 +474,7 @@ function MainApp() {
       <div className="flex-1 flex min-h-0 min-w-0 overflow-hidden p-4 md:p-6 pt-0 gap-6">
           
           {/* Sidebar */}
-          <aside className={`w-[280px] bg-[var(--bg-sidebar)] rounded-3xl border border-[var(--border-color)] flex flex-col min-h-0 shadow-[0_10px_30px_var(--shadow-color)] relative overflow-hidden transition-all shrink-0 ${isSidebarOpen ? 'translate-x-0 absolute z-40 h-full left-0' : 'hidden md:flex'}`}>
+          <aside className={`w-[280px] bg-[#12141c] rounded-3xl border border-white/5 flex flex-col min-h-0 shadow-[0_10px_30px_rgba(0,0,0,0.5)] relative overflow-hidden transition-all shrink-0 ${isSidebarOpen ? 'translate-x-0 absolute z-40 h-full left-0' : 'hidden md:flex'}`}>
               
               {/* Inner ambient glow for sidebar */}
               <div className="absolute top-0 left-1/2 -translate-x-1/2 w-48 h-48 bg-cyan-500/10 blur-[60px] rounded-full pointer-events-none"></div>
@@ -569,13 +569,13 @@ function MainApp() {
           </aside>
 
           {/* Main Chat Container */}
-          <main className="flex-1 min-w-0 min-h-0 rounded-3xl relative flex flex-col bg-[var(--bg-main)] overflow-hidden shadow-[0_0_30px_var(--shadow-glow)] border"
-                style={{ background: chatBg ? `url(${chatBg}) center/cover no-repeat` : 'var(--bg-main)', borderColor: 'var(--border-color)' }}>
+          <main className="flex-1 min-w-0 min-h-0 rounded-3xl relative flex flex-col bg-[#0f111a] overflow-hidden shadow-[0_0_30px_rgba(6,182,212,0.1)] border"
+                style={{ background: chatBg ? `url(${chatBg}) center/cover no-repeat` : '#0f111a', borderColor: 'rgba(255, 255, 255, 0.05)' }}>
               
               {/* Outer gradient border illusion via linear-gradient using a wrapper, but implemented directly on container above with box-shadow */}
               
               {/* Chat Header */}
-              <div className="flex items-center justify-between px-3 py-2 border-b border-[var(--border-color)] bg-[var(--bg-main)] backdrop-blur-md z-10 shrink-0">
+              <div className="flex items-center justify-between px-3 py-2 border-b border-white/5 bg-[#0f111a]/80 backdrop-blur-md z-10 shrink-0">
                   <div className="flex items-center gap-2">
                      <button onClick={() => setIsSidebarOpen(!isSidebarOpen)} className="md:hidden text-gray-400 hover:text-white">
                        <Menu size={20} />
@@ -590,6 +590,13 @@ function MainApp() {
                         {isMusicPlaying ? <Volume2 size={20} /> : <VolumeX size={20} />}
                      </button>
                   </div>
+              </div>
+
+              {/* Bottom Navigation for Mobile */}
+              <div className="md:hidden flex justify-around p-3 bg-[#12141c] border-t border-white/5 shrink-0">
+                  <button onClick={() => setActiveChat('global')} className="text-gray-400">Global</button>
+                  <button onClick={() => setIsFriendsSidebarOpen(true)} className="text-gray-400">Amigos</button>
+                  <button onClick={() => setIsConfigOpen(true)} className="text-gray-400">Perfil</button>
               </div>
 
               {activeChat === 'pluma' ? (

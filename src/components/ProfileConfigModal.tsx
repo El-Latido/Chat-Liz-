@@ -24,7 +24,6 @@ export function ProfileConfigModal({
   const [password, setPassword] = useState(user.password || '');
   const [fotoURL, setFotoURL] = useState(user.profilePic || '');
   const [isFriendsPublic, setIsFriendsPublic] = useState(user.is_friends_public || false);
-  const [theme, setTheme] = useState(user.preferred_theme || 'classic');
   const [backgroundBase64, setBackgroundBase64] = useState(user.preferred_background || '');
   const [saveStatus, setSaveStatus] = useState<string | null>(null);
 
@@ -41,7 +40,6 @@ export function ProfileConfigModal({
         statusMessage: comentario,
         pais_idioma: pais,
         is_friends_public: isFriendsPublic,
-        preferred_theme: theme,
         preferred_background: backgroundBase64
       }, { merge: true });
 
@@ -53,7 +51,6 @@ export function ProfileConfigModal({
         statusMessage: comentario,
         countryLanguage: pais,
         is_friends_public: isFriendsPublic,
-        preferred_theme: theme,
         preferred_background: backgroundBase64
       }));
 
@@ -66,7 +63,6 @@ export function ProfileConfigModal({
         statusMessage: comentario, 
         countryLanguage: pais,
         is_friends_public: isFriendsPublic,
-        preferred_theme: theme,
         preferred_background: backgroundBase64
       }, () => {});
 
@@ -164,30 +160,6 @@ export function ProfileConfigModal({
              >
                <div className={`absolute top-1 left-1 w-4 h-4 rounded-full bg-white transition-transform ${isFriendsPublic ? 'translate-x-6' : ''}`} />
              </button>
-          </div>
-
-          <div className="space-y-2">
-            <label className="text-sm font-semibold text-[var(--text-secondary)]">Tema de Interfaz</label>
-            <div className="grid grid-cols-3 gap-2">
-               <button 
-                  onClick={() => setTheme('classic')}
-                  className={`p-2 rounded-xl border text-xs font-bold transition-all ${theme === 'classic' ? 'bg-[var(--text-accent)]/20 border-[var(--text-accent)] text-[var(--text-accent)]' : 'bg-[var(--bg-input)] border-[var(--border-color)] text-[var(--text-secondary)] hover:opacity-80'}`}
-               >
-                  ELIZABETH
-               </button>
-               <button 
-                  onClick={() => setTheme('pastel')}
-                  className={`p-2 rounded-xl border text-xs font-bold transition-all ${theme === 'pastel' ? 'bg-[var(--text-accent)]/20 border-[var(--text-accent)] text-[var(--text-accent)]' : 'bg-[var(--bg-input)] border-[var(--border-color)] text-[var(--text-secondary)] hover:opacity-80'}`}
-               >
-                  Pastel Suave
-               </button>
-               <button 
-                  onClick={() => setTheme('night')}
-                  className={`p-2 rounded-xl border text-xs font-bold transition-all ${theme === 'night' ? 'bg-[var(--text-accent)]/20 border-[var(--text-accent)] text-[var(--text-accent)]' : 'bg-[var(--bg-input)] border-[var(--border-color)] text-[var(--text-secondary)] hover:opacity-80'}`}
-               >
-                  Noche Profunda
-               </button>
-            </div>
           </div>
 
           <div className="space-y-2">
