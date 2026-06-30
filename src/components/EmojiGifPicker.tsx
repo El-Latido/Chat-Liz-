@@ -42,18 +42,17 @@ export function EmojiGifPicker({ onSelect, onClose }: EmojiGifPickerProps) {
   };
 
   return (
-    <div className="relative w-72 bg-[#12141c]/90 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl flex flex-col p-3 z-[9999]">
-      <div className="absolute -bottom-2 right-4 w-4 h-4 bg-[#12141c] border-r border-b border-white/10 rotate-45 z-[-1]"></div>
-      <div className="flex border-b border-white/10 pb-2">
+    <div className="absolute bottom-16 left-0 w-72 bg-[#12141c] border border-white/10 rounded-2xl shadow-2xl flex flex-col overflow-hidden z-50">
+      <div className="flex border-b border-white/10">
         <button 
           onClick={() => setActiveTab('emoji')} 
-          className={`flex-1 py-1 text-sm font-medium ${activeTab === 'emoji' ? 'text-white' : 'text-gray-400 hover:text-white'}`}
+          className={`flex-1 py-2 text-sm font-medium ${activeTab === 'emoji' ? 'text-cyan-400 bg-cyan-400/10' : 'text-gray-400 hover:text-white'}`}
         >
           Emojis
         </button>
         <button 
           onClick={() => setActiveTab('gif')} 
-          className={`flex-1 py-1 text-sm font-medium ${activeTab === 'gif' ? 'text-white' : 'text-gray-400 hover:text-white'}`}
+          className={`flex-1 py-2 text-sm font-medium ${activeTab === 'gif' ? 'text-cyan-400 bg-cyan-400/10' : 'text-gray-400 hover:text-white'}`}
         >
           GIFs
         </button>

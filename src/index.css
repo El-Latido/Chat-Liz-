@@ -6,28 +6,8 @@
   --font-display: "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
 }
 
-@layer base {
-  :root {
-    --bg-main: #0f0c29;
-    --bg-sidebar: rgba(255, 255, 255, 0.05);
-    --bg-modal: rgba(255, 255, 255, 0.05);
-    --bg-card: rgba(255, 255, 255, 0.05);
-    --bg-input: rgba(255, 255, 255, 0.05);
-    --text-primary: #ffffff;
-    --text-secondary: #a0a0a0;
-    --text-accent: #302b63;
-    --border-color: rgba(255, 255, 255, 0.1);
-    --bubble-sent: rgba(48, 43, 99, 0.5);
-    --bubble-recv: rgba(255, 255, 255, 0.05);
-    --bubble-text: #ffffff;
-    --shadow-color: rgba(0, 0, 0, 0.5);
-    --shadow-glow: rgba(48, 43, 99, 0.3);
-  }
-}
-
 body {
   font-family: var(--font-sans);
-  background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
-  color: var(--text-primary);
-  min-height: 100vh;
+  background-color: #000;
+  color: #fff;
 }

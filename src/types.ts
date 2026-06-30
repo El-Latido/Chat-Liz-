@@ -8,11 +8,9 @@ export interface UserObj {
   timezone?: string;
   systemInstruction?: string;
   friends_list?: string[];
-  friend_requests?: string[];
   blocked_list?: string[];
   is_friends_public?: boolean;
   awards?: string[];
-  preferred_background?: string;
 }
 
 export interface PlumaGameState {
