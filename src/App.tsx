@@ -441,7 +441,7 @@ function MainApp() {
     <div style={{ width: '100%', height: '100%', overflow: 'hidden', position: 'fixed', top: 0, left: 0 }} className="bg-[#07090e] text-gray-200 flex flex-col font-sans">
       
       {/* Top Navigation Bar (Mobile-First Ultra-Compact) */}
-      <nav className="flex items-center justify-between px-3 py-2 bg-[#07090e] shrink-0 border-b border-white/5 relative z-[70]">
+      <nav className="flex items-center justify-between px-3 py-2 bg-[#07090e] shrink-0 border-b border-white/5 relative z-50">
          <div className="flex items-center gap-2">
              <div className="relative">
                  <div className="w-8 h-8 rounded-full border border-white/10 overflow-hidden bg-gradient-to-br from-gray-700 to-gray-800">
@@ -471,10 +471,9 @@ function MainApp() {
              </button>
              <button 
                 onClick={() => { 
-                   if (window.innerWidth < 640) {
-                       setMobileView(mobileView === 'buzon' ? 'chat' : 'buzon');
-                   } else {
-                       setIsFriendsSidebarOpen(!isFriendsSidebarOpen); 
+                   setIsFriendsSidebarOpen(!isFriendsSidebarOpen);
+                   if (!isFriendsSidebarOpen) {
+                       setMobileView('buzon');
                    }
                 }}
                 className={`p-2 rounded-xl transition-all relative ${(Object.values(unreadPMs).some(v => v) || (user.friend_requests && user.friend_requests.length > 0)) ? 'text-cyan-400 bg-cyan-500/10' : 'text-gray-400 hover:text-white'}`}
@@ -592,13 +591,13 @@ function MainApp() {
           </aside>
 
           {/* Main Chat Container */}
-          <main className={`flex-1 min-w-0 min-h-0 sm:rounded-3xl relative flex flex-col bg-[#07090e] sm:bg-white/5 sm:backdrop-blur-lg overflow-hidden sm:shadow-2xl sm:border border-white/10 ${mobileView === 'chat' ? 'fixed inset-0 top-[49px] z-[60] sm:static sm:inset-auto sm:z-auto sm:top-auto' : 'hidden sm:flex'}`}
-                style={{ background: chatBg ? `url(${chatBg}) center/cover no-repeat` : undefined }}>
+          <main className={`flex-1 min-w-0 min-h-0 rounded-3xl relative flex flex-col bg-white/5 backdrop-blur-lg overflow-hidden shadow-2xl border border-white/10 ${mobileView === 'chat' ? 'fixed inset-0 top-[49px] z-[60] sm:static sm:inset-auto sm:z-auto sm:top-auto' : 'hidden sm:flex'}`}
+                style={{ background: chatBg ? `url(${chatBg}) center/cover no-repeat` : 'rgba(255, 255, 255, 0.05)' }}>
               
               {/* Chat Header */}
               <div className="flex items-center justify-between px-6 py-4 border-b border-white/10 bg-white/5 backdrop-blur-md z-10 shrink-0">
                   <div className="flex items-center gap-2">
-                     <button onClick={() => { setMobileView('buzon'); setIsFriendsSidebarOpen(true); }} className="md:hidden text-gray-400 hover:text-white mr-1">
+                     <button onClick={() => { setMobileView('buzon'); }} className="sm:hidden text-gray-400 hover:text-white mr-1 transition-colors">
                        <ChevronLeft size={24} />
                      </button>
                      <button onClick={() => setIsSidebarOpen(!isSidebarOpen)} className="text-gray-400 hover:text-white mr-2">
@@ -977,8 +976,8 @@ function MainApp() {
        )}
 
        {/* Friends Sidebar / Buzón (State Stack on Mobile, Modal on Desktop) */}
-       <div className={`fixed inset-0 z-50 flex items-end justify-center sm:items-center p-0 sm:p-4 transition-all duration-300 ${mobileView === 'buzon' || isFriendsSidebarOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none delay-100'} ${isFriendsSidebarOpen && mobileView !== 'buzon' ? 'bg-black/60 backdrop-blur-sm' : 'bg-[#07090e] sm:bg-transparent'}`} onClick={() => { setIsFriendsSidebarOpen(false); if(mobileView === 'buzon') setMobileView('chat'); }}>
-           <div className={`bg-[#12141c] rounded-none sm:rounded-3xl w-full sm:max-w-md shadow-2xl relative border-0 sm:border border-white/10 flex flex-col h-full sm:h-[85vh] transition-transform duration-300 ${mobileView === 'buzon' || isFriendsSidebarOpen ? 'translate-x-0 sm:translate-y-0' : '-translate-x-full sm:-translate-y-10 sm:translate-x-0'}`} onClick={e => e.stopPropagation()}>
+       <div className={`fixed inset-0 z-50 flex items-end justify-center sm:items-center p-0 sm:p-4 transition-all duration-300 ${isFriendsSidebarOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none delay-100'} ${isFriendsSidebarOpen && mobileView !== 'buzon' ? 'bg-black/60 backdrop-blur-sm' : 'bg-[#07090e] sm:bg-transparent'}`} onClick={() => { setIsFriendsSidebarOpen(false); }}>
+           <div className={`bg-[#12141c] rounded-none sm:rounded-3xl w-full sm:max-w-md shadow-2xl relative border-0 sm:border border-white/10 flex flex-col h-full sm:h-[85vh] transition-transform duration-300 ${isFriendsSidebarOpen ? 'translate-x-0 sm:translate-y-0' : '-translate-x-full sm:-translate-y-10 sm:translate-x-0'}`} onClick={e => e.stopPropagation()}>
                <div className="p-4 border-b border-white/5 flex items-center justify-between shrink-0 bg-[#0a0a16] sm:bg-transparent">
                    <div className="flex flex-col gap-2">
                        <h2 className="text-lg font-bold text-white flex items-center gap-2">
@@ -986,7 +985,7 @@ function MainApp() {
                            Buzón de Amigos
                        </h2>
                    </div>
-                   <button onClick={() => { setIsFriendsSidebarOpen(false); setMobileView('chat'); }} className="text-gray-400 hover:text-white p-2 rounded-full hover:bg-white/10 transition-colors">
+                   <button onClick={() => { setIsFriendsSidebarOpen(false); }} className="text-gray-400 hover:text-white p-2 rounded-full hover:bg-white/10 transition-colors">
                        <X size={20} />
                    </button>
                </div>
