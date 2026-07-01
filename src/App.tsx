@@ -86,7 +86,7 @@ function MainApp() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isFriendsSidebarOpen, setIsFriendsSidebarOpen] = useState(false);
   const [unreadPMs, setUnreadPMs] = useState<Record<string, boolean>>({});
-  const [tutiFruttiState, setTutiFruttiState] = useState<any>({ isActive: false, players: [], currentLetter: '', roundEndTime: 0, scores: {}, answers: {} });
+  const [tutiFruttiState, setTutiFruttiState] = useState<any>({ isActive: false, players: [], currentLetter: '', roundEndTime: 0, scores: {}, answers: {}, maxPlayers: 5 });
   const [tfAnswers, setTfAnswers] = useState({ name: '', color: '', animal: '', fruit: '', thing: '' });
   const [now, setNow] = useState(Date.now());
 
@@ -601,13 +601,43 @@ function MainApp() {
                                     <p className="text-gray-500 mb-8 text-lg">Únete a la partida y demuestra tu rapidez mental.</p>
                                     
                                     {!tutiFruttiState.players.includes(user.username) ? (
-                                        <button onClick={() => socket.emit('join_tutifrutti')} className="bg-gradient-to-r from-pink-400 to-purple-400 hover:from-pink-500 hover:to-purple-500 text-white px-10 py-4 rounded-full text-xl font-bold shadow-lg transition-transform hover:scale-105 active:scale-95">
-                                            Unirme al Juego ✨
-                                        </button>
+                                        <div className="flex flex-col items-center gap-4">
+                                            <button 
+                                                onClick={() => socket.emit('join_tutifrutti')} 
+                                                disabled={tutiFruttiState.players.length >= tutiFruttiState.maxPlayers}
+                                                className="bg-gradient-to-r from-pink-400 to-purple-400 hover:from-pink-500 hover:to-purple-500 disabled:opacity-50 text-white px-10 py-4 rounded-full text-xl font-bold shadow-lg transition-transform hover:scale-105 active:scale-95"
+                                            >
+                                                {tutiFruttiState.players.length >= tutiFruttiState.maxPlayers ? 'Sala Llena' : 'Unirme al Juego ✨'}
+                                            </button>
+                                        </div>
                                     ) : (
-                                        <button onClick={() => socket.emit('start_tutifrutti_round')} className="bg-gradient-to-r from-green-400 to-emerald-400 hover:from-green-500 hover:to-emerald-500 text-white px-10 py-4 rounded-full text-xl font-bold shadow-lg transition-transform hover:scale-105 active:scale-95">
-                                            ¡Comenzar Ronda! 🚀
-                                        </button>
+                                        <div className="flex flex-col items-center gap-4">
+                                            <p className="text-pink-500 font-bold text-xl">
+                                                Esperando jugadores... ({tutiFruttiState.players.length}/{tutiFruttiState.maxPlayers})
+                                            </p>
+                                            
+                                            <div className="flex items-center gap-2 mb-2 text-pink-500 font-bold">
+                                                <label>Jugadores requeridos:</label>
+                                                <select 
+                                                    value={tutiFruttiState.maxPlayers} 
+                                                    onChange={(e) => socket.emit("set_max_players", parseInt(e.target.value))}
+                                                    className="bg-white border-2 border-pink-200 rounded-lg p-1 outline-none"
+                                                >
+                                                    <option value={2}>2</option>
+                                                    <option value={3}>3</option>
+                                                    <option value={4}>4</option>
+                                                    <option value={5}>5</option>
+                                                </select>
+                                            </div>
+
+                                            <button 
+                                                onClick={() => socket.emit('start_tutifrutti_round')} 
+                                                disabled={tutiFruttiState.players.length < tutiFruttiState.maxPlayers}
+                                                className="bg-gradient-to-r from-green-400 to-emerald-400 hover:from-green-500 hover:to-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed text-white px-10 py-4 rounded-full text-xl font-bold shadow-lg transition-transform hover:scale-105 active:scale-95"
+                                            >
+                                                ¡Comenzar Ronda! 🚀
+                                            </button>
+                                        </div>
                                     )}
                                 </div>
                             ) : (

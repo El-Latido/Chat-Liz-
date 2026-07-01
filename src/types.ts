@@ -25,6 +25,7 @@ export interface TutiFruttiState {
   scores: Record<string, number>;
   roundEndTime: number;
   answers: Record<string, any>;
+  maxPlayers: number;
 }
 
 export interface HallOfFameEntry {

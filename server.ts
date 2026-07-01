@@ -152,7 +152,8 @@ async function startServer() {
       currentLetter: '',
       scores: {} as Record<string, number>,
       roundEndTime: 0,
-      answers: {} as Record<string, any>
+      answers: {} as Record<string, any>,
+      maxPlayers: 5
   };
 
   setInterval(() => {
@@ -161,6 +162,9 @@ async function startServer() {
          tutiFruttiState.isActive = false;
          tutiFruttiState.roundEndTime = 0;
          io.emit("tutifrutti_state", tutiFruttiState);
+         
+         const msg = { text: `⏰ ¡Se acabó el tiempo!`, sender: "TutiFrutti", id: Date.now().toString(), createdAt: Date.now(), isAi: true };
+         io.emit("receive_global", msg);
      }
   }, 1000);
 
@@ -471,6 +475,8 @@ async function startServer() {
 
     socket.on("join_tutifrutti", () => {
         if (!currentUsername) return;
+        if (tutiFruttiState.players.length >= tutiFruttiState.maxPlayers && !tutiFruttiState.players.includes(currentUsername)) return;
+        
         if (!tutiFruttiState.players.includes(currentUsername)) {
             tutiFruttiState.players.push(currentUsername);
             if (!tutiFruttiState.scores[currentUsername]) {
@@ -480,11 +486,20 @@ async function startServer() {
         }
     });
 
+    socket.on("set_max_players", (max) => {
+        if (!currentUsername) return;
+        if (!tutiFruttiState.isActive && tutiFruttiState.players.includes(currentUsername)) {
+            tutiFruttiState.maxPlayers = Math.max(2, Math.min(5, max));
+            io.emit("tutifrutti_state", tutiFruttiState);
+        }
+    });
+
     socket.on("leave_tutifrutti", () => {
         if (!currentUsername) return;
         tutiFruttiState.players = tutiFruttiState.players.filter(p => p !== currentUsername);
         if (tutiFruttiState.players.length === 0) {
             tutiFruttiState.isActive = false;
+            tutiFruttiState.scores = {};
         }
         io.emit("tutifrutti_state", tutiFruttiState);
     });
@@ -497,6 +512,9 @@ async function startServer() {
         tutiFruttiState.currentLetter = alphabet[Math.floor(Math.random() * alphabet.length)];
         tutiFruttiState.roundEndTime = Date.now() + 60000;
         io.emit("tutifrutti_state", tutiFruttiState);
+        
+        const msg = { text: `🍓 ¡Nueva ronda iniciada! Letra: ${tutiFruttiState.currentLetter}`, sender: "TutiFrutti", id: Date.now().toString(), createdAt: Date.now(), isAi: true };
+        io.emit("receive_global", msg);
     });
 
     socket.on("stop_tutifrutti", () => {
@@ -505,6 +523,9 @@ async function startServer() {
            tutiFruttiState.isActive = false;
            tutiFruttiState.roundEndTime = 0;
            io.emit("tutifrutti_state", tutiFruttiState);
+           
+           const msg = { text: `🛑 ¡${currentUsername} ha dicho Tuti Frutti!`, sender: "TutiFrutti", id: Date.now().toString(), createdAt: Date.now(), isAi: true };
+           io.emit("receive_global", msg);
         }
     });
 
