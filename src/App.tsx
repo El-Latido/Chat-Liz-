@@ -345,12 +345,31 @@ function MainApp() {
 
   const startRecording = async () => {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      mediaRecorderRef.current = new MediaRecorder(stream);
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        audio: {
+          sampleRate: 44100,
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true,
+        }
+      });
+      
+      const options = {
+        audioBitsPerSecond: 128000,
+      };
+      
+      let mimeType = 'audio/webm;codecs=opus';
+      if (MediaRecorder.isTypeSupported('audio/mp4;codecs=mp4a.40.2')) {
+         mimeType = 'audio/mp4;codecs=mp4a.40.2';
+      } else if (!MediaRecorder.isTypeSupported(mimeType) && MediaRecorder.isTypeSupported('audio/ogg;codecs=opus')) {
+         mimeType = 'audio/ogg;codecs=opus';
+      }
+
+      mediaRecorderRef.current = new MediaRecorder(stream, { mimeType, ...options });
       audioChunks.current = [];
       mediaRecorderRef.current.ondataavailable = (e) => audioChunks.current.push(e.data);
       mediaRecorderRef.current.onstop = () => {
-        const blob = new Blob(audioChunks.current, { type: 'audio/wav' });
+        const blob = new Blob(audioChunks.current, { type: mimeType });
         const reader = new FileReader();
         reader.readAsDataURL(blob);
         reader.onloadend = () => {
