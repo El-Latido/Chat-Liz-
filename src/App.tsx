@@ -400,30 +400,34 @@ function MainApp() {
   }
 
   return (
-    <div style={{ width: '100%', height: '100%', overflow: 'hidden', position: 'fixed', top: 0, left: 0 }} className="bg-[#07090e] text-gray-200 flex flex-col font-sans">
+    <div style={{ width: '100%', height: '100%', overflow: 'hidden', position: 'fixed', top: 0, left: 0 }} className="bg-gradient-to-br from-[#0B1220] via-[#121B2A] to-[#0A101C] text-gray-200 flex flex-col font-sans">
       
-      {/* Top Navigation Bar */}
-      <nav className="flex items-center justify-between px-6 py-4 bg-[#0B1220] border-b border-[#D4AF37]/20 shrink-0 shadow-[0_4px_20px_rgba(0,0,0,0.3)] z-50 relative">
-         <div className="flex items-center gap-3">
+      {/* Top Navigation Bar (Floating/Overlay style) */}
+      <nav className="flex items-center justify-between px-4 py-3 shrink-0 z-50 relative w-full">
+         <div className="flex-1 flex items-center justify-start">
              <button onClick={() => setIsSidebarOpen(!isSidebarOpen)} className="md:hidden text-[#D4AF37] hover:text-[#E8D9B0] p-2 rounded-full hover:bg-white/5 transition-colors">
                  <Menu size={24} strokeWidth={1.5} />
              </button>
-             <div className="relative flex items-center justify-center hidden sm:flex">
-                 <MessageSquare size={28} strokeWidth={1.5} className="text-[#D4AF37]" />
-             </div>
-             <h1 className="text-xl font-bold text-[#E8D9B0] tracking-wide">Chat-Liz</h1>
          </div>
 
-         <div className="flex items-center gap-4">
-             <div className="flex items-center gap-3 bg-[#121B2A] border border-[#D4AF37]/30 px-4 py-1.5 rounded-full shadow-[0_4px_10px_rgba(212,175,55,0.1)]">
-                 <div className="w-7 h-7 rounded-full border border-[#D4AF37]/50 overflow-hidden">
+         {/* Center: Chat-Liz pill */}
+         <div className="flex-1 flex justify-center">
+             <div className="bg-[#121B2A]/60 backdrop-blur-md border border-[#D4AF37]/30 rounded-full px-6 py-1.5 shadow-[0_0_15px_rgba(212,175,55,0.1)] flex items-center justify-center">
+                 <h1 className="text-[16px] font-bold text-[#E8D9B0] tracking-wide">Chat-Liz</h1>
+             </div>
+         </div>
+
+         {/* Right: Avatar, Name, Settings */}
+         <div className="flex-1 flex items-center justify-end gap-2 sm:gap-3">
+             <div className="flex items-center gap-2">
+                 <div className="w-7 h-7 rounded-full border border-[#D4AF37]/50 overflow-hidden shrink-0">
                     <img src={user.profilePic || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.username}`} alt="avatar" className="w-full h-full object-cover" />
                  </div>
-                 <span className="font-medium text-[#E8D9B0] text-sm tracking-wide hidden sm:block">{user.username}</span>
+                 <span className="font-medium text-[#E8D9B0] text-[14px] tracking-wide hidden sm:block">{user.username}</span>
              </div>
              <button 
                 onClick={() => { setIsConfigOpen(true); }}
-                className="w-10 h-10 rounded-full bg-[#121B2A] border border-[#D4AF37]/30 flex items-center justify-center text-[#D4AF37] hover:text-[#E8D9B0] hover:border-[#D4AF37]/60 transition-all shadow-sm"
+                className="w-8 h-8 rounded-full flex items-center justify-center text-[#D4AF37] hover:text-[#E8D9B0] transition-colors"
              >
                 <Settings size={20} strokeWidth={1.5} />
              </button>
@@ -431,7 +435,8 @@ function MainApp() {
       </nav>
 
       {/* Main Content Layout */}
-      <div className="flex-1 flex min-h-0 min-w-0 overflow-hidden p-4 md:p-6 gap-6 pt-6">
+      <div className="flex-1 flex min-h-0 min-w-0 overflow-hidden relative">
+
           
           {/* Sidebar */}
           <aside className={`w-[280px] bg-[#0B1220] rounded-3xl border border-[#D4AF37]/20 flex flex-col min-h-0 shadow-[0_10px_30px_rgba(0,0,0,0.5)] relative overflow-hidden transition-all shrink-0 ${isSidebarOpen ? 'translate-x-0 absolute z-40 h-full left-0' : 'hidden md:flex'}`}>
@@ -541,7 +546,7 @@ function MainApp() {
           </aside>
 
           {/* Main Chat Container */}
-          <main className="flex-1 min-w-0 min-h-0 rounded-[2.5rem] relative flex flex-col bg-gradient-to-b from-[#0B1220] to-[#121B2A] overflow-hidden border-[8px] border-[#07090e] shadow-[0_0_50px_rgba(0,0,0,0.5)]"
+          <main className="flex-1 min-w-0 min-h-0 relative flex flex-col bg-transparent overflow-hidden"
                 style={{ background: chatBg ? `url(${chatBg}) center/cover no-repeat` : undefined }}>
               
               {/* Chat Content Wrapper */}
@@ -644,30 +649,31 @@ function MainApp() {
               ) : (
                 <>
                   {/* Chat Feed */}
-              <div className="flex-1 overflow-y-auto px-4 md:px-6 py-4 space-y-2 scrollbar-thin">
+              <div className="flex-1 overflow-y-auto px-2 md:px-4 py-2 space-y-1.5 scrollbar-thin">
                   {messages.filter(m => m && m.sender).map((m, idx) => {
                      const isLiz = m.sender === 'Elizabeth' || m.isAi;
                      const date = m.createdAt?.toDate ? m.createdAt.toDate() : new Date();
                      const timeStr = isNaN(date.getTime()) ? `10:0${idx % 10}` : date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-                     const senderUser = usersOnline.find(u => u.username === m.sender);
 
                      return (
-                         <div key={m.id || idx} className="flex justify-start mb-2 group px-2 md:px-6">
+                         <div key={m.id || idx} className="flex justify-start px-1 md:px-2">
                              {isLiz ? (
-                                 <div className="bg-[#151C2C] border border-[#2B354C] rounded-[24px] px-5 py-2.5 max-w-[95%] md:max-w-[85%] shadow-md">
-                                     <span className="text-[#8B98B0] mr-2 text-[14px]">[{timeStr}]</span>
-                                     <span className="font-bold text-[#E8D9B0] mr-2 text-[15px]">ELIZABETH {m.isAi && '(IA Administradora Gemini ✨)'}:</span>
-                                     <span className="text-[#E8D9B0] text-[15px]">{m.text}</span>
-                                     {m.image && <div className="mt-2"><img src={m.image} className="rounded-xl border border-white/10 max-w-full shadow-lg" alt="adjunto"/></div>}
-                                     {(m.type === 'audio' || m.audio) && <div className="mt-2 bg-[#13151f] p-2 rounded-xl border border-white/5 shadow-inner"><audio src={m.audio} controls className="h-8 max-w-[200px] opacity-90" /></div>}
+                                 <div className="pl-2.5 py-0.5 flex flex-col max-w-[98%] border-l-[3px] border-[#D4AF37]/20 ml-1">
+                                     <div className="flex items-baseline flex-wrap">
+                                         <span className="text-[#8B98B0] mr-1.5 text-[13px] font-mono">[{timeStr}]</span>
+                                         <span className="font-bold text-[#D4AF37] mr-1.5 text-[14px]">ELIZABETH {m.isAi && '(IA Administradora Gemini ✨)'}:</span>
+                                         <span className="text-[#E8D9B0] text-[14px] leading-snug">{m.text}</span>
+                                     </div>
+                                     {m.image && <div className="mt-1"><img src={m.image} className="rounded-xl border border-white/10 max-w-full shadow-md h-28 object-cover" alt="adjunto"/></div>}
+                                     {(m.type === 'audio' || m.audio) && <div className="mt-1 bg-[#13151f] p-1.5 rounded-xl border border-white/5 shadow-inner"><audio src={m.audio} controls className="h-6 max-w-[160px] opacity-90" /></div>}
                                  </div>
                              ) : (
-                                 <div className="bg-[#F2E3C6] border border-[#E0D0B0] rounded-[24px] px-5 py-2.5 max-w-[95%] md:max-w-[85%] shadow-md">
-                                     <span className="text-[#6B7280] mr-2 text-[14px]">[{timeStr}]</span>
-                                     <span className="font-bold text-[#5A52A5] mr-2 text-[15px]">{m.sender}:</span>
-                                     <span className="text-[#1A2035] text-[15px]">{m.text}</span>
-                                     {m.image && <div className="mt-2"><img src={m.image} className="rounded-xl border border-black/10 max-w-full shadow-lg" alt="adjunto"/></div>}
-                                     {(m.type === 'audio' || m.audio) && <div className="mt-2 bg-white/50 p-2 rounded-xl border border-black/5 shadow-inner"><audio src={m.audio} controls className="h-8 max-w-[200px]" /></div>}
+                                 <div className="bg-[#F2E3C6] rounded-[20px] px-3.5 py-1 max-w-[95%] shadow-sm flex items-baseline flex-wrap">
+                                     <span className="text-[#6B7280] mr-1.5 text-[13px] font-mono">[{timeStr}]</span>
+                                     <span className="font-bold text-[#5A52A5] mr-1.5 text-[14px]">{m.sender}:</span>
+                                     <span className="text-[#1A2035] text-[14px] leading-snug">{m.text}</span>
+                                     {m.image && <div className="w-full mt-1"><img src={m.image} className="rounded-xl border border-black/10 max-w-full shadow-md h-28 object-cover" alt="adjunto"/></div>}
+                                     {(m.type === 'audio' || m.audio) && <div className="w-full mt-1 bg-white/50 p-1.5 rounded-xl border border-black/5 shadow-inner"><audio src={m.audio} controls className="h-6 max-w-[160px]" /></div>}
                                  </div>
                              )}
                          </div>
@@ -694,24 +700,24 @@ function MainApp() {
               </div>
 
               {/* Input Area */}
-              <div className="px-4 py-4 md:px-6 md:py-6 shrink-0 bg-transparent relative z-10">
+              <div className="px-2 pb-2 pt-1 shrink-0 bg-transparent relative z-10 max-w-5xl w-full mx-auto">
                   {(selectedImage || audioUrl || selectedGif) && (
-                    <div className="flex gap-4 mb-4">
+                    <div className="flex gap-4 mb-3">
                       {selectedImage && (
                         <div className="relative inline-block animate-in fade-in slide-in-from-bottom-2">
-                           <img src={selectedImage} alt="Preview" className="h-20 w-20 rounded-xl border-2 border-[#D4AF37] object-cover shadow-lg" />
+                           <img src={selectedImage} alt="Preview" className="h-16 w-16 rounded-xl border-2 border-[#D4AF37] object-cover shadow-lg" />
                            <button onClick={() => setSelectedImage(null)} className="absolute -top-3 -right-3 bg-red-500 hover:bg-red-600 transition-colors text-white rounded-full p-1.5 shadow-xl"><X size={14} /></button>
                         </div>
                       )}
                       {selectedGif && (
                         <div className="relative inline-block animate-in fade-in slide-in-from-bottom-2">
-                           <img src={selectedGif} alt="GIF Preview" className="h-20 w-20 rounded-xl border-2 border-[#D4AF37] object-cover shadow-lg" />
+                           <img src={selectedGif} alt="GIF Preview" className="h-16 w-16 rounded-xl border-2 border-[#D4AF37] object-cover shadow-lg" />
                            <button onClick={() => setSelectedGif(null)} className="absolute -top-3 -right-3 bg-red-500 hover:bg-red-600 transition-colors text-white rounded-full p-1.5 shadow-xl"><X size={14} /></button>
                         </div>
                       )}
                       {audioUrl && (
-                        <div className="relative flex items-center gap-3 bg-[#121927] px-4 py-2 rounded-xl border border-[#D4AF37]/40 shadow-lg animate-in fade-in slide-in-from-bottom-2">
-                           <audio src={audioUrl} controls className="h-8 w-48 opacity-90" />
+                        <div className="relative flex items-center gap-2 bg-[#121927] px-3 py-1.5 rounded-xl border border-[#D4AF37]/40 shadow-lg animate-in fade-in slide-in-from-bottom-2">
+                           <audio src={audioUrl} controls className="h-6 w-32 opacity-90" />
                            <button onClick={() => setAudioUrl(null)} className="absolute -top-3 -right-3 bg-red-500 hover:bg-red-600 transition-colors text-white rounded-full p-1.5 shadow-xl"><X size={14} /></button>
                         </div>
                       )}
@@ -720,21 +726,21 @@ function MainApp() {
 
                   <div className="flex items-center gap-2 relative">
                       <input type="file" accept="image/*" className="hidden" ref={fileInputRef} onChange={handleImageSelect} />
-                      <div className="flex-1 bg-[#121927]/60 backdrop-blur-md border border-[#D4AF37]/40 rounded-full flex items-center px-4 py-2 relative shadow-[0_0_15px_rgba(212,175,55,0.05)] focus-within:border-[#D4AF37] focus-within:shadow-[0_0_20px_rgba(212,175,55,0.2)] transition-all">
+                      <div className="flex-1 bg-transparent border border-[#D4AF37]/50 rounded-[24px] flex items-center px-4 py-1.5 relative shadow-[0_0_15px_rgba(212,175,55,0.05)] focus-within:border-[#D4AF37] focus-within:shadow-[0_0_20px_rgba(212,175,55,0.2)] transition-all">
                           <input 
                              value={inputValue}
                              onChange={handleInputChange}
                              onKeyDown={e => {
                                 if (e.key === 'Enter') handleSendMessage();
                              }}
-                             className="w-full bg-transparent outline-none text-[#E8D9B0] placeholder-[#D4AF37]/60 text-[15px] py-1.5" 
+                             className="w-full bg-transparent outline-none text-[#E8D9B0] placeholder-[#D4AF37]/60 text-[14px] py-1" 
                              placeholder="Escribe tu mensaje... @Elizabeth para IA carismática"
                           />
-                          <div className="flex items-center gap-1 text-[#D4AF37] ml-2 shrink-0">
-                              <button onClick={() => setShowEmojiPicker(!showEmojiPicker)} className="hover:text-[#E8D9B0] p-1.5 rounded-full hover:bg-white/5 transition-colors"><Smile size={22} strokeWidth={1.5} /></button>
-                              <button onClick={() => fileInputRef.current?.click()} className="hover:text-[#E8D9B0] p-1.5 rounded-full hover:bg-white/5 transition-colors hidden sm:block"><Paperclip size={22} strokeWidth={1.5} /></button>
-                              <button onClick={isRecording ? stopRecording : startRecording} className={`p-1.5 rounded-full transition-colors ${isRecording ? 'text-red-500 bg-red-500/10 animate-pulse' : 'hover:text-[#E8D9B0] hover:bg-white/5'}`}>
-                                 {isRecording ? <StopCircle size={22} strokeWidth={1.5} /> : <Mic size={22} strokeWidth={1.5} />}
+                          <div className="flex items-center gap-1 text-[#D4AF37]/80 ml-2 shrink-0">
+                              <button onClick={() => setShowEmojiPicker(!showEmojiPicker)} className="hover:text-[#D4AF37] p-1.5 transition-colors"><Smile size={20} strokeWidth={1.5} /></button>
+                              <button onClick={() => fileInputRef.current?.click()} className="hover:text-[#D4AF37] p-1.5 transition-colors"><Paperclip size={20} strokeWidth={1.5} /></button>
+                              <button onClick={isRecording ? stopRecording : startRecording} className={`p-1.5 transition-colors ${isRecording ? 'text-red-500 animate-pulse' : 'hover:text-[#D4AF37]'}`}>
+                                 {isRecording ? <StopCircle size={20} strokeWidth={1.5} /> : <Mic size={20} strokeWidth={1.5} />}
                               </button>
                           </div>
                       </div>
@@ -752,9 +758,9 @@ function MainApp() {
                       <button 
                         onClick={handleSendMessage} 
                         disabled={!inputValue.trim() && !selectedImage && !audioUrl && !selectedGif}
-                        className="bg-[#D4AF37]/20 hover:bg-[#D4AF37]/30 border border-[#D4AF37]/40 text-[#D4AF37] hover:text-[#E8D9B0] rounded-full h-[54px] w-[54px] flex items-center justify-center shadow-[0_0_15px_rgba(212,175,55,0.2)] disabled:opacity-50 disabled:shadow-none transition-all shrink-0 ml-1"
+                        className="w-[46px] h-[46px] rounded-[16px] bg-[#121B2A]/80 backdrop-blur-md border border-[#D4AF37]/50 flex items-center justify-center text-[#D4AF37] hover:text-[#E8D9B0] hover:bg-[#D4AF37]/20 transition-all shadow-[0_0_15px_rgba(212,175,55,0.2)] shrink-0 disabled:opacity-50 disabled:shadow-none"
                       >
-                        <Send size={24} className="ml-1" strokeWidth={1.5} />
+                        <Send size={20} className="ml-0.5" strokeWidth={1.5} />
                       </button>
                   </div>
               </div>
