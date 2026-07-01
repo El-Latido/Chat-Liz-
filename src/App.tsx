@@ -455,10 +455,10 @@ function MainApp() {
       <div className="flex-1 flex min-h-0 min-w-0 overflow-hidden p-4 md:p-6 pt-0 gap-6">
           
           {/* Sidebar */}
-          <aside className={`w-[280px] bg-[#12141c] rounded-3xl border border-white/5 flex flex-col min-h-0 shadow-[0_10px_30px_rgba(0,0,0,0.5)] relative overflow-hidden transition-all shrink-0 ${isSidebarOpen ? 'translate-x-0 absolute z-40 h-full left-0' : 'hidden md:flex'}`}>
+          <aside className={`w-[280px] bg-[#0B1220] rounded-3xl border border-[#D4AF37]/20 flex flex-col min-h-0 shadow-[0_10px_30px_rgba(0,0,0,0.5)] relative overflow-hidden transition-all shrink-0 ${isSidebarOpen ? 'translate-x-0 absolute z-40 h-full left-0' : 'hidden md:flex'}`}>
               
               {/* Inner ambient glow for sidebar */}
-              <div className="absolute top-0 left-1/2 -translate-x-1/2 w-48 h-48 bg-cyan-500/10 blur-[60px] rounded-full pointer-events-none"></div>
+              <div className="absolute top-0 left-1/2 -translate-x-1/2 w-48 h-48 bg-[#D4AF37]/10 blur-[60px] rounded-full pointer-events-none"></div>
 
               {/* Elizabeth Profile Area (Sidebar header) */}
               <div className="flex flex-col items-center pt-10 pb-6 relative z-10">
@@ -471,36 +471,36 @@ function MainApp() {
                         setSelectedUserModal(elizabethUser);
                     }
                  }}>
-                    <div className="absolute inset-0 bg-cyan-400 blur-2xl opacity-20 rounded-full group-hover:opacity-40 transition-opacity"></div>
-                    <div className="w-28 h-28 rounded-full border border-cyan-400/50 p-1 relative z-10 bg-[#0a0a16] shadow-[0_0_20px_rgba(6,182,212,0.3)] flex items-center justify-center overflow-hidden [clip-path:polygon(50%_0%,100%_25%,100%_75%,50%_100%,0%_75%,0%_25%)]">
+                    <div className="absolute inset-0 bg-[#D4AF37] blur-2xl opacity-10 rounded-full group-hover:opacity-30 transition-opacity"></div>
+                    <div className="w-28 h-28 rounded-full border border-[#D4AF37]/50 p-1 relative z-10 bg-[#121B2A] shadow-[0_0_20px_rgba(212,175,55,0.2)] flex items-center justify-center overflow-hidden [clip-path:polygon(50%_0%,100%_25%,100%_75%,50%_100%,0%_75%,0%_25%)]">
                        {(usersOnline.find(u => u.username === 'Elizabeth')?.profilePic) ? (
                          <img src={usersOnline.find(u => u.username === 'Elizabeth')?.profilePic} className="w-full h-full object-cover rounded-full" alt="Elizabeth" />
                        ) : (
-                         <Bot size={54} className="text-cyan-300 drop-shadow-[0_0_10px_rgba(6,182,212,0.8)]" />
+                         <Bot size={54} className="text-[#D4AF37] drop-shadow-[0_0_10px_rgba(212,175,55,0.5)]" />
                        )}
                     </div>
                     {/* Glowing dot for online status */}
-                    <div className="absolute bottom-2 right-2 w-4 h-4 bg-cyan-400 rounded-full border-2 border-[#12141c] shadow-[0_0_8px_rgba(6,182,212,0.8)]"></div>
+                    <div className="absolute bottom-2 right-2 w-4 h-4 bg-[#D4AF37] rounded-full border-2 border-[#0B1220] shadow-[0_0_8px_rgba(212,175,55,0.6)]"></div>
                  </div>
 
                  {/* Elizabeth Tab */}
                  <div className="px-4 w-full">
                     <button 
                        onClick={() => setActiveChat('Elizabeth')}
-                       className={`w-full flex items-center justify-between px-4 py-3 rounded-2xl border ${activeChat === 'Elizabeth' || activeChat === 'global' ? 'shadow-[0_0_15px_rgba(6,182,212,0.15)]' : 'border-transparent hover:bg-white/5'} transition-all`}
-                       style={ (activeChat === 'Elizabeth' || activeChat === 'global') ? { background: 'linear-gradient(#1a1c26, #1a1c26) padding-box, linear-gradient(to right, #06b6d4, #a855f7) border-box', border: '1px solid transparent' } : {} }
+                       className={`w-full flex items-center justify-between px-4 py-3 rounded-2xl border ${activeChat === 'Elizabeth' || activeChat === 'global' ? 'shadow-[0_0_15px_rgba(212,175,55,0.15)]' : 'border-transparent hover:bg-white/5'} transition-all`}
+                       style={ (activeChat === 'Elizabeth' || activeChat === 'global') ? { background: 'linear-gradient(#151C2C, #151C2C) padding-box, linear-gradient(to right, #D4AF37, #9B8233) border-box', border: '1px solid transparent' } : {} }
                     >
                         <div className="flex items-center gap-3">
-                           <div className="w-8 h-8 rounded-full bg-cyan-900/50 border border-cyan-500/50 flex items-center justify-center overflow-hidden">
+                           <div className="w-8 h-8 rounded-full bg-[#D4AF37]/10 border border-[#D4AF37]/50 flex items-center justify-center overflow-hidden">
                               {(usersOnline.find(u => u.username === 'Elizabeth')?.profilePic) ? (
                                 <img src={usersOnline.find(u => u.username === 'Elizabeth')?.profilePic} className="w-full h-full object-cover" />
                               ) : (
-                                <Bot size={16} className="text-cyan-300" />
+                                <Bot size={16} className="text-[#D4AF37]" />
                               )}
                            </div>
                            <div className="flex flex-col items-start leading-tight">
-                              <span className="font-bold text-white text-[15px]">ELIZABETH <span className="text-cyan-400 font-normal">~</span></span>
-                              <span className="text-[12px] text-cyan-400">online</span>
+                              <span className="font-bold text-[#E8D9B0] text-[15px]">ELIZABETH <span className="text-[#D4AF37] font-normal">~</span></span>
+                              <span className="text-[12px] text-[#D4AF37]">online</span>
                            </div>
                         </div>
                     </button>
@@ -546,36 +546,35 @@ function MainApp() {
           </aside>
 
           {/* Main Chat Container */}
-          <main className="flex-1 min-w-0 min-h-0 rounded-3xl relative flex flex-col bg-[#0f111a] overflow-hidden shadow-[0_0_30px_rgba(6,182,212,0.1)] border"
-                style={{ background: chatBg ? `url(${chatBg}) center/cover no-repeat` : 'linear-gradient(#0f111a, #0f111a) padding-box, linear-gradient(135deg, #06b6d4 0%, #a855f7 100%) border-box', border: '1px solid transparent' }}>
-              
-              {/* Outer gradient border illusion via linear-gradient using a wrapper, but implemented directly on container above with box-shadow */}
+          <main className="flex-1 min-w-0 min-h-0 rounded-[2.5rem] relative flex flex-col bg-gradient-to-b from-[#0B1220] to-[#121B2A] overflow-hidden border-[8px] border-[#07090e] shadow-[0_0_50px_rgba(0,0,0,0.5)]"
+                style={{ background: chatBg ? `url(${chatBg}) center/cover no-repeat` : undefined }}>
               
               {/* Chat Header */}
-              <div className="flex items-center justify-between px-6 py-4 border-b border-white/5 bg-[#0f111a]/80 backdrop-blur-xl z-10 shrink-0 shadow-sm">
-                  <div className="flex items-center gap-3">
-                     <button onClick={() => setIsSidebarOpen(!isSidebarOpen)} className="md:hidden text-gray-400 hover:text-white p-2 rounded-full hover:bg-white/5 transition-colors">
-                       <Menu size={22} strokeWidth={1.5} />
-                     </button>
-                     <div>
-                         <h2 className="text-[17px] font-bold text-white flex items-center gap-2 tracking-tight">
-                            {activeChat === 'global' ? 'CHAT GLOBAL #1 - Chat-Liz' : (activeChat === 'Elizabeth' ? 'Elizabeth' : activeChat)}
-                         </h2>
-                         {activeChat === 'global' && <span className="text-xs font-medium text-cyan-400/80">{usersOnline.filter(u => u.username !== 'Elizabeth').length + 1} usuarios online</span>}
-                         {activeChat !== 'global' && activeChat !== 'pluma' && activeChat !== 'fama' && <span className="text-xs font-medium text-cyan-400/80">online</span>}
-                     </div>
+              <div className="flex items-center justify-between px-6 pt-5 pb-3 z-10 shrink-0 bg-transparent">
+                  <div className="flex-1 flex items-center">
+                      <button onClick={() => setIsSidebarOpen(!isSidebarOpen)} className="md:hidden text-[#D4AF37] hover:text-[#E8D9B0] p-2 rounded-full hover:bg-white/5 transition-colors">
+                          <Menu size={22} strokeWidth={1.5} />
+                      </button>
                   </div>
-                  <div className="flex items-center gap-2">
-                     <button id="music-toggle" onClick={() => setIsMusicPlaying(!isMusicPlaying)} className="text-gray-400 hover:text-cyan-400 transition-colors p-2 rounded-full hover:bg-white/5">
-                        {isMusicPlaying ? <Volume2 size={20} strokeWidth={1.5} /> : <VolumeX size={20} strokeWidth={1.5} />}
-                     </button>
-                     {activeChat === 'global' && (
-                        <button className="hidden md:flex items-center gap-2 text-gray-400 bg-[#1a1c26] border border-white/5 px-4 py-1.5 rounded-full hover:bg-white/10 hover:text-white transition-all text-sm font-medium shadow-sm">
-                           <MessageSquare size={16} strokeWidth={1.5} />
-                           Private chat
-                           <Search size={16} className="ml-1 opacity-50" strokeWidth={1.5} />
-                        </button>
-                     )}
+                  
+                  <div className="flex items-center justify-center flex-1">
+                      <div className="bg-[#151C2C]/80 backdrop-blur-md border border-[#D4AF37]/40 rounded-full px-8 py-1.5 shadow-[0_0_20px_rgba(212,175,55,0.15)] flex items-center justify-center min-w-[140px]">
+                          <h2 className="text-[18px] font-bold text-[#E8D9B0] tracking-wide">
+                              Chat-Liz
+                          </h2>
+                      </div>
+                  </div>
+
+                  <div className="flex items-center justify-end gap-3 flex-1">
+                      <div className="flex items-center gap-2">
+                          <div className="w-8 h-8 rounded-full border border-[#D4AF37]/50 overflow-hidden shadow-sm">
+                              <img src={user.profilePic || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.username}`} alt="avatar" className="w-full h-full object-cover" />
+                          </div>
+                          <span className="text-[#E8D9B0] font-medium text-[15px] hidden md:block">{user.username}</span>
+                      </div>
+                      <button onClick={() => setIsConfigOpen(true)} className="text-[#D4AF37] hover:text-[#E8D9B0] transition-colors p-1 hover:bg-white/5 rounded-full">
+                          <Settings size={22} strokeWidth={1.5} />
+                      </button>
                   </div>
               </div>
 
@@ -685,42 +684,38 @@ function MainApp() {
                      const senderUser = usersOnline.find(u => u.username === m.sender);
 
                      return (
-                         <div key={m.id || idx} className={`flex flex-col gap-1 mb-4 ${m.sender === user.username ? 'items-end' : 'items-start'} group`}>
-                            <div className={`flex items-end gap-2 max-w-[85%] ${m.sender === user.username ? 'flex-row-reverse' : 'flex-row'}`}>
-                               {m.sender !== user.username && (
-                                   <div className="w-8 h-8 rounded-full flex-shrink-0 border border-white/10 overflow-hidden shadow-sm">
-                                       <img src={senderUser?.profilePic || `https://api.dicebear.com/7.x/avataaars/svg?seed=${m.sender}`} className="w-full h-full object-cover" />
-                                   </div>
-                               )}
-                               <div className={`relative px-4 py-2.5 rounded-2xl shadow-md ${m.sender === user.username ? 'bg-cyan-600/20 text-cyan-50 border border-cyan-500/30 rounded-br-sm' : isLiz ? 'bg-fuchsia-600/20 text-fuchsia-50 border border-fuchsia-500/30 rounded-bl-sm' : 'bg-[#1a1c26] text-gray-200 border border-white/10 rounded-bl-sm'}`}>
-                                   {m.sender !== user.username && (
-                                       <div className={`text-xs font-bold mb-1 flex items-center gap-1 ${isLiz ? 'text-fuchsia-400' : 'text-blue-400'}`}>
-                                           {isLiz ? 'ELIZABETH' : m.sender}
-                                           {!isLiz && senderUser?.awards?.map((award, i) => (
-                                              <span key={i} className="text-[10px]">{award}</span>
-                                           ))}
-                                       </div>
-                                   )}
-                                   <div className="text-[15px] leading-relaxed break-words">{m.text}</div>
-                                   {m.image && <div className="mt-2"><img src={m.image} className="rounded-xl border border-white/10 max-w-full shadow-lg" alt="adjunto"/></div>}
-                                   {(m.type === 'audio' || m.audio) && <div className="mt-2 bg-[#13151f] p-2 rounded-xl border border-white/5 shadow-inner"><audio src={m.audio} controls className="h-8 max-w-[200px] opacity-90" /></div>}
-                                   <div className="text-[10px] text-right mt-1 opacity-50">{timeStr}</div>
-                               </div>
-                            </div>
+                         <div key={m.id || idx} className="flex justify-start mb-2 group px-2 md:px-6">
+                             {isLiz ? (
+                                 <div className="bg-[#151C2C] border border-[#2B354C] rounded-[24px] px-5 py-2.5 max-w-[95%] md:max-w-[85%] shadow-md">
+                                     <span className="text-[#8B98B0] mr-2 text-[14px]">[{timeStr}]</span>
+                                     <span className="font-bold text-[#E8D9B0] mr-2 text-[15px]">ELIZABETH {isAi && '(IA Administradora Gemini ✨)'}:</span>
+                                     <span className="text-[#E8D9B0] text-[15px]">{m.text}</span>
+                                     {m.image && <div className="mt-2"><img src={m.image} className="rounded-xl border border-white/10 max-w-full shadow-lg" alt="adjunto"/></div>}
+                                     {(m.type === 'audio' || m.audio) && <div className="mt-2 bg-[#13151f] p-2 rounded-xl border border-white/5 shadow-inner"><audio src={m.audio} controls className="h-8 max-w-[200px] opacity-90" /></div>}
+                                 </div>
+                             ) : (
+                                 <div className="bg-[#F2E3C6] border border-[#E0D0B0] rounded-[24px] px-5 py-2.5 max-w-[95%] md:max-w-[85%] shadow-md">
+                                     <span className="text-[#6B7280] mr-2 text-[14px]">[{timeStr}]</span>
+                                     <span className="font-bold text-[#5A52A5] mr-2 text-[15px]">{m.sender}:</span>
+                                     <span className="text-[#1A2035] text-[15px]">{m.text}</span>
+                                     {m.image && <div className="mt-2"><img src={m.image} className="rounded-xl border border-black/10 max-w-full shadow-lg" alt="adjunto"/></div>}
+                                     {(m.type === 'audio' || m.audio) && <div className="mt-2 bg-white/50 p-2 rounded-xl border border-black/5 shadow-inner"><audio src={m.audio} controls className="h-8 max-w-[200px]" /></div>}
+                                 </div>
+                             )}
                          </div>
                      );
                   })}
 
                   {/* Typing Indicator */}
                   {typingUsers[activeChat] && typingUsers[activeChat].length > 0 && (
-                     <div className="flex flex-col gap-1 mb-4">
+                     <div className="flex flex-col gap-1 mb-4 px-2 md:px-6">
                         {typingUsers[activeChat].includes("Elizabeth") && (
-                           <div className="text-cyan-400 text-sm font-medium italic flex items-center">
+                           <div className="text-[#D4AF37] text-sm font-medium italic flex items-center">
                               ELIZABETH está escribiendo<span className="ml-1 flex gap-1"><span className="animate-bounce">.</span><span className="animate-bounce" style={{animationDelay: '0.2s'}}>.</span><span className="animate-bounce" style={{animationDelay: '0.4s'}}>.</span></span>
                            </div>
                         )}
                         {typingUsers[activeChat].filter(u => u !== "Elizabeth").length > 0 && (
-                           <div className="text-gray-400 text-sm font-medium italic">
+                           <div className="text-[#8B98B0] text-sm font-medium italic">
                               {typingUsers[activeChat].filter(u => u !== "Elizabeth").join(", ")} {typingUsers[activeChat].filter(u => u !== "Elizabeth").length > 1 ? 'están' : 'está'} escribiendo...
                            </div>
                         )}
@@ -731,23 +726,23 @@ function MainApp() {
               </div>
 
               {/* Input Area */}
-              <div className="px-4 py-4 shrink-0 bg-transparent relative z-10 border-t border-white/5">
+              <div className="px-4 py-4 md:px-6 md:py-6 shrink-0 bg-transparent relative z-10">
                   {(selectedImage || audioUrl || selectedGif) && (
                     <div className="flex gap-4 mb-4">
                       {selectedImage && (
                         <div className="relative inline-block animate-in fade-in slide-in-from-bottom-2">
-                           <img src={selectedImage} alt="Preview" className="h-20 w-20 rounded-xl border-2 border-cyan-500 object-cover shadow-lg" />
+                           <img src={selectedImage} alt="Preview" className="h-20 w-20 rounded-xl border-2 border-[#D4AF37] object-cover shadow-lg" />
                            <button onClick={() => setSelectedImage(null)} className="absolute -top-3 -right-3 bg-red-500 hover:bg-red-600 transition-colors text-white rounded-full p-1.5 shadow-xl"><X size={14} /></button>
                         </div>
                       )}
                       {selectedGif && (
                         <div className="relative inline-block animate-in fade-in slide-in-from-bottom-2">
-                           <img src={selectedGif} alt="GIF Preview" className="h-20 w-20 rounded-xl border-2 border-cyan-500 object-cover shadow-lg" />
+                           <img src={selectedGif} alt="GIF Preview" className="h-20 w-20 rounded-xl border-2 border-[#D4AF37] object-cover shadow-lg" />
                            <button onClick={() => setSelectedGif(null)} className="absolute -top-3 -right-3 bg-red-500 hover:bg-red-600 transition-colors text-white rounded-full p-1.5 shadow-xl"><X size={14} /></button>
                         </div>
                       )}
                       {audioUrl && (
-                        <div className="relative flex items-center gap-3 bg-[#1a1c26] px-4 py-2 rounded-xl border border-white/10 shadow-lg animate-in fade-in slide-in-from-bottom-2">
+                        <div className="relative flex items-center gap-3 bg-[#121927] px-4 py-2 rounded-xl border border-[#D4AF37]/40 shadow-lg animate-in fade-in slide-in-from-bottom-2">
                            <audio src={audioUrl} controls className="h-8 w-48 opacity-90" />
                            <button onClick={() => setAudioUrl(null)} className="absolute -top-3 -right-3 bg-red-500 hover:bg-red-600 transition-colors text-white rounded-full p-1.5 shadow-xl"><X size={14} /></button>
                         </div>
@@ -757,19 +752,19 @@ function MainApp() {
 
                   <div className="flex items-center gap-2 relative">
                       <input type="file" accept="image/*" className="hidden" ref={fileInputRef} onChange={handleImageSelect} />
-                      <div className="flex-1 bg-[#1a1c26]/80 backdrop-blur-md border border-white/10 rounded-full flex items-center px-4 py-1.5 relative shadow-inner focus-within:border-cyan-500/50 transition-all">
+                      <div className="flex-1 bg-[#121927]/60 backdrop-blur-md border border-[#D4AF37]/40 rounded-full flex items-center px-4 py-2 relative shadow-[0_0_15px_rgba(212,175,55,0.05)] focus-within:border-[#D4AF37] focus-within:shadow-[0_0_20px_rgba(212,175,55,0.2)] transition-all">
                           <input 
                              value={inputValue}
                              onChange={handleInputChange}
                              onKeyDown={e => {
                                 if (e.key === 'Enter') handleSendMessage();
                              }}
-                             className="w-full bg-transparent outline-none text-gray-200 placeholder-gray-500 text-[15px] py-1.5" 
-                             placeholder="Escribe tu mensaje..."
+                             className="w-full bg-transparent outline-none text-[#E8D9B0] placeholder-[#D4AF37]/60 text-[15px] py-1.5" 
+                             placeholder="Escribe tu mensaje... @Elizabeth para IA carismática"
                           />
-                          <div className="flex items-center gap-1 text-gray-400 ml-2">
-                              <button onClick={() => setShowEmojiPicker(!showEmojiPicker)} className="hover:text-cyan-400 p-1.5 rounded-full hover:bg-white/5 transition-colors"><Smile size={20} strokeWidth={1.5} /></button>
-                              <button onClick={() => fileInputRef.current?.click()} className="hover:text-cyan-400 p-1.5 rounded-full hover:bg-white/5 transition-colors"><Paperclip size={20} strokeWidth={1.5} /></button>
+                          <div className="flex items-center gap-1 text-[#D4AF37] ml-2">
+                              <button onClick={() => setShowEmojiPicker(!showEmojiPicker)} className="hover:text-[#E8D9B0] p-1.5 rounded-full hover:bg-white/5 transition-colors"><Smile size={22} strokeWidth={1.5} /></button>
+                              <button onClick={() => fileInputRef.current?.click()} className="hover:text-[#E8D9B0] p-1.5 rounded-full hover:bg-white/5 transition-colors"><Paperclip size={22} strokeWidth={1.5} /></button>
                           </div>
                       </div>
                       
@@ -786,12 +781,12 @@ function MainApp() {
                       <button 
                         onClick={handleSendMessage} 
                         disabled={!inputValue.trim() && !selectedImage && !audioUrl && !selectedGif}
-                        className="bg-cyan-500 hover:bg-cyan-400 text-white rounded-full h-[46px] w-[46px] flex items-center justify-center shadow-[0_4px_15px_rgba(6,182,212,0.4)] disabled:opacity-50 disabled:shadow-none transition-all shrink-0 ml-1"
+                        className="bg-[#D4AF37]/20 hover:bg-[#D4AF37]/30 border border-[#D4AF37]/40 text-[#D4AF37] hover:text-[#E8D9B0] rounded-full h-[54px] w-[54px] flex items-center justify-center shadow-[0_0_15px_rgba(212,175,55,0.2)] disabled:opacity-50 disabled:shadow-none transition-all shrink-0 ml-1"
                       >
-                        <Send size={20} className="ml-0.5" strokeWidth={2} />
+                        <Send size={24} className="ml-1" strokeWidth={1.5} />
                       </button>
-                      <button onClick={isRecording ? stopRecording : startRecording} className={`ml-1 flex items-center justify-center rounded-full h-[46px] w-[46px] bg-[#1a1c26]/80 backdrop-blur-md border border-white/10 shrink-0 transition-all ${isRecording ? 'text-red-500 shadow-[0_0_15px_rgba(239,68,68,0.5)] bg-red-500/10' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}>
-                          {isRecording ? <StopCircle size={22} className="animate-pulse" strokeWidth={1.5} /> : <Mic size={22} strokeWidth={1.5} />}
+                      <button onClick={isRecording ? stopRecording : startRecording} className={`ml-1 flex items-center justify-center rounded-full h-[54px] w-[54px] bg-[#121927]/60 backdrop-blur-md border border-[#D4AF37]/40 shrink-0 transition-all ${isRecording ? 'text-red-500 shadow-[0_0_15px_rgba(239,68,68,0.5)] bg-red-500/10 border-red-500/50' : 'text-[#D4AF37] hover:text-[#E8D9B0] hover:bg-white/5'}`}>
+                          {isRecording ? <StopCircle size={24} className="animate-pulse" strokeWidth={1.5} /> : <Mic size={24} strokeWidth={1.5} />}
                       </button>
                   </div>
               </div>
