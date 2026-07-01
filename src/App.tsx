@@ -199,7 +199,10 @@ function MainApp() {
 
     socket.on('receive_private', (msg: any, fromUser: string) => {
       if (activeChat === fromUser) {
-        setMessages(prev => [...prev, msg]);
+        setMessages(prev => {
+            if (prev.some(m => m.id === msg.id)) return prev;
+            return [...prev, msg];
+        });
         setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
       } else {
         setUnreadPMs(prev => ({ ...prev, [fromUser]: true }));
@@ -400,59 +403,35 @@ function MainApp() {
     <div style={{ width: '100%', height: '100%', overflow: 'hidden', position: 'fixed', top: 0, left: 0 }} className="bg-[#07090e] text-gray-200 flex flex-col font-sans">
       
       {/* Top Navigation Bar */}
-      <nav className="flex items-center justify-between px-6 py-4 bg-[#07090e] shrink-0">
+      <nav className="flex items-center justify-between px-6 py-4 bg-[#0B1220] border-b border-[#D4AF37]/20 shrink-0 shadow-[0_4px_20px_rgba(0,0,0,0.3)] z-50 relative">
          <div className="flex items-center gap-3">
-             <div className="relative flex items-center justify-center">
-                 <MessageSquare size={32} strokeWidth={1.5} className="text-cyan-400" />
-                 <div className="absolute w-[18px] h-[6px] bg-gradient-to-r from-cyan-400 to-purple-500 right-0 bottom-2 rounded-full"></div>
+             <button onClick={() => setIsSidebarOpen(!isSidebarOpen)} className="md:hidden text-[#D4AF37] hover:text-[#E8D9B0] p-2 rounded-full hover:bg-white/5 transition-colors">
+                 <Menu size={24} strokeWidth={1.5} />
+             </button>
+             <div className="relative flex items-center justify-center hidden sm:flex">
+                 <MessageSquare size={28} strokeWidth={1.5} className="text-[#D4AF37]" />
              </div>
-             <h1 className="text-2xl font-bold text-white tracking-wide">Chat-Liz</h1>
+             <h1 className="text-xl font-bold text-[#E8D9B0] tracking-wide">Chat-Liz</h1>
          </div>
 
          <div className="flex items-center gap-4">
-             <button 
-                onClick={() => { setActiveChat('global'); setUnreadPMs(prev => ({ ...prev, global: false })); }}
-                className={`flex items-center gap-2 px-4 py-2 rounded-xl border transition-all ${activeChat === 'global' ? 'bg-cyan-500/20 border-cyan-500/50 text-cyan-400' : 'bg-[#13151f] border-white/10 text-gray-400 hover:text-white hover:border-white/30'} shadow-[0_4px_10px_rgba(0,0,0,0.5)]`}
-             >
-                <Globe size={20} />
-                <span className="font-bold text-sm hidden sm:inline">Mundo</span>
-             </button>
-             <button 
-                onClick={() => { setActiveChat('pluma'); }}
-                className={`flex items-center gap-2 px-4 py-2 rounded-xl border transition-all ${activeChat === 'pluma' ? 'bg-fuchsia-500/20 border-fuchsia-500/50 text-fuchsia-400' : 'bg-[#13151f] border-white/10 text-gray-400 hover:text-white hover:border-white/30'} shadow-[0_4px_10px_rgba(0,0,0,0.5)]`}
-             >
-                <div className="relative">
-                   <Bot size={20} />
-                   {plumaState.isActive && <div className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-red-500 rounded-full animate-pulse border border-black"></div>}
-                </div>
-                <span className="font-bold text-sm hidden sm:inline">La Pluma</span>
-             </button>
-             <button 
-                onClick={() => { setIsFriendsSidebarOpen(!isFriendsSidebarOpen); }}
-                className={`relative w-10 h-10 rounded-xl bg-[#13151f] border transition-all shadow-[0_4px_10px_rgba(0,0,0,0.5)] flex items-center justify-center ${Object.values(unreadPMs).some(v => v) ? 'border-cyan-500 text-cyan-400 bg-cyan-500/10' : 'border-white/10 text-gray-400 hover:text-white hover:border-white/30'}`}
-             >
-                <MessageSquare size={20} />
-                {Object.values(unreadPMs).some(v => v) && (
-                   <div className="absolute -top-1 -right-1 w-3 h-3 bg-cyan-500 rounded-full border-2 border-[#07090e]"></div>
-                )}
-             </button>
-             <div className="flex items-center gap-3 bg-[#13151f] border border-white/10 px-4 py-1.5 rounded-full shadow-[0_4px_10px_rgba(0,0,0,0.5)]">
-                 <div className="w-7 h-7 rounded-full bg-gradient-to-br from-gray-700 to-gray-800 flex items-center justify-center text-xs font-bold border border-white/5 overflow-hidden">
+             <div className="flex items-center gap-3 bg-[#121B2A] border border-[#D4AF37]/30 px-4 py-1.5 rounded-full shadow-[0_4px_10px_rgba(212,175,55,0.1)]">
+                 <div className="w-7 h-7 rounded-full border border-[#D4AF37]/50 overflow-hidden">
                     <img src={user.profilePic || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.username}`} alt="avatar" className="w-full h-full object-cover" />
                  </div>
-                 <span className="font-medium text-gray-200 text-sm tracking-wide">{user.username}</span>
+                 <span className="font-medium text-[#E8D9B0] text-sm tracking-wide hidden sm:block">{user.username}</span>
              </div>
              <button 
                 onClick={() => { setIsConfigOpen(true); }}
-                className="w-10 h-10 rounded-xl bg-[#13151f] border border-white/10 flex items-center justify-center text-gray-400 hover:text-white hover:border-white/30 transition-all shadow-[0_4px_10px_rgba(0,0,0,0.5)]"
+                className="w-10 h-10 rounded-full bg-[#121B2A] border border-[#D4AF37]/30 flex items-center justify-center text-[#D4AF37] hover:text-[#E8D9B0] hover:border-[#D4AF37]/60 transition-all shadow-sm"
              >
-                <Settings size={20} />
+                <Settings size={20} strokeWidth={1.5} />
              </button>
          </div>
       </nav>
 
       {/* Main Content Layout */}
-      <div className="flex-1 flex min-h-0 min-w-0 overflow-hidden p-4 md:p-6 pt-0 gap-6">
+      <div className="flex-1 flex min-h-0 min-w-0 overflow-hidden p-4 md:p-6 gap-6 pt-6">
           
           {/* Sidebar */}
           <aside className={`w-[280px] bg-[#0B1220] rounded-3xl border border-[#D4AF37]/20 flex flex-col min-h-0 shadow-[0_10px_30px_rgba(0,0,0,0.5)] relative overflow-hidden transition-all shrink-0 ${isSidebarOpen ? 'translate-x-0 absolute z-40 h-full left-0' : 'hidden md:flex'}`}>
@@ -461,51 +440,67 @@ function MainApp() {
               <div className="absolute top-0 left-1/2 -translate-x-1/2 w-48 h-48 bg-[#D4AF37]/10 blur-[60px] rounded-full pointer-events-none"></div>
 
               {/* Elizabeth Profile Area (Sidebar header) */}
-              <div className="flex flex-col items-center pt-10 pb-6 relative z-10">
-                 <div className="relative mb-6 group cursor-pointer" onClick={() => {
-                    const elizabethUser = usersOnline.find(u => u.username === 'Elizabeth') || {username: 'Elizabeth', statusMessage: 'Administradora', role: 'admin'};
-                    if (user.username.trim() === "Axiss") {
-                        setAiProfileForm({ profilePic: elizabethUser.profilePic || '', statusMessage: elizabethUser.statusMessage || 'Administradora', systemInstruction: elizabethUser.systemInstruction || '' });
-                        setAdminConfigLizOpen(true);
-                    } else {
-                        setSelectedUserModal(elizabethUser);
-                    }
-                 }}>
+              <div className="flex flex-col items-center pt-8 pb-4 relative z-10 border-b border-[#D4AF37]/10">
+                 <button 
+                    onClick={() => setActiveChat('Elizabeth')}
+                    className="relative mb-3 group transition-transform hover:scale-105"
+                 >
                     <div className="absolute inset-0 bg-[#D4AF37] blur-2xl opacity-10 rounded-full group-hover:opacity-30 transition-opacity"></div>
-                    <div className="w-28 h-28 rounded-full border border-[#D4AF37]/50 p-1 relative z-10 bg-[#121B2A] shadow-[0_0_20px_rgba(212,175,55,0.2)] flex items-center justify-center overflow-hidden [clip-path:polygon(50%_0%,100%_25%,100%_75%,50%_100%,0%_75%,0%_25%)]">
+                    <div className={`w-24 h-24 rounded-full border ${activeChat === 'Elizabeth' ? 'border-[#D4AF37] shadow-[0_0_20px_rgba(212,175,55,0.4)]' : 'border-[#D4AF37]/50'} p-1 relative z-10 bg-[#121B2A] flex items-center justify-center overflow-hidden [clip-path:polygon(50%_0%,100%_25%,100%_75%,50%_100%,0%_75%,0%_25%)]`}>
                        {(usersOnline.find(u => u.username === 'Elizabeth')?.profilePic) ? (
                          <img src={usersOnline.find(u => u.username === 'Elizabeth')?.profilePic} className="w-full h-full object-cover rounded-full" alt="Elizabeth" />
                        ) : (
-                         <Bot size={54} className="text-[#D4AF37] drop-shadow-[0_0_10px_rgba(212,175,55,0.5)]" />
+                         <Bot size={48} className="text-[#D4AF37] drop-shadow-[0_0_10px_rgba(212,175,55,0.5)]" />
                        )}
                     </div>
                     {/* Glowing dot for online status */}
-                    <div className="absolute bottom-2 right-2 w-4 h-4 bg-[#D4AF37] rounded-full border-2 border-[#0B1220] shadow-[0_0_8px_rgba(212,175,55,0.6)]"></div>
-                 </div>
-
-                 {/* Elizabeth Tab */}
-                 <div className="px-4 w-full">
+                    <div className="absolute bottom-1 right-1 w-4 h-4 bg-[#D4AF37] rounded-full border-2 border-[#0B1220] shadow-[0_0_8px_rgba(212,175,55,0.6)]"></div>
+                 </button>
+                 
+                 <div className="flex items-center gap-2">
+                    <div className="flex flex-col items-center leading-tight">
+                       <span className="font-bold text-[#E8D9B0] text-[16px]">ELIZABETH <span className="text-[#D4AF37] font-normal">✨</span></span>
+                       <span className="text-[12px] text-[#D4AF37]">Administradora IA</span>
+                    </div>
                     <button 
-                       onClick={() => setActiveChat('Elizabeth')}
-                       className={`w-full flex items-center justify-between px-4 py-3 rounded-2xl border ${activeChat === 'Elizabeth' || activeChat === 'global' ? 'shadow-[0_0_15px_rgba(212,175,55,0.15)]' : 'border-transparent hover:bg-white/5'} transition-all`}
-                       style={ (activeChat === 'Elizabeth' || activeChat === 'global') ? { background: 'linear-gradient(#151C2C, #151C2C) padding-box, linear-gradient(to right, #D4AF37, #9B8233) border-box', border: '1px solid transparent' } : {} }
+                       className="p-1.5 rounded-full hover:bg-white/10 text-[#D4AF37]/70 hover:text-[#D4AF37] transition-colors"
+                       title="Perfil de Elizabeth"
+                       onClick={() => {
+                          const elizabethUser = usersOnline.find(u => u.username === 'Elizabeth') || {username: 'Elizabeth', statusMessage: 'Administradora', role: 'admin'};
+                          if (user.username.trim() === "Axiss") {
+                              setAiProfileForm({ profilePic: elizabethUser.profilePic || '', statusMessage: elizabethUser.statusMessage || 'Administradora', systemInstruction: elizabethUser.systemInstruction || '' });
+                              setAdminConfigLizOpen(true);
+                          } else {
+                              setSelectedUserModal(elizabethUser);
+                          }
+                       }}
                     >
-                        <div className="flex items-center gap-3">
-                           <div className="w-8 h-8 rounded-full bg-[#D4AF37]/10 border border-[#D4AF37]/50 flex items-center justify-center overflow-hidden">
-                              {(usersOnline.find(u => u.username === 'Elizabeth')?.profilePic) ? (
-                                <img src={usersOnline.find(u => u.username === 'Elizabeth')?.profilePic} className="w-full h-full object-cover" />
-                              ) : (
-                                <Bot size={16} className="text-[#D4AF37]" />
-                              )}
-                           </div>
-                           <div className="flex flex-col items-start leading-tight">
-                              <span className="font-bold text-[#E8D9B0] text-[15px]">ELIZABETH <span className="text-[#D4AF37] font-normal">~</span></span>
-                              <span className="text-[12px] text-[#D4AF37]">online</span>
-                           </div>
-                        </div>
+                       <Settings size={14} />
                     </button>
                  </div>
               </div>
+                 {/* Actions / Utilities */}
+                 <div className="px-4 mt-2 grid grid-cols-2 gap-2">
+                     <button id="music-toggle" onClick={() => setIsMusicPlaying(!isMusicPlaying)} className="flex items-center justify-center gap-2 text-[#D4AF37] bg-[#121B2A]/80 border border-[#D4AF37]/30 px-3 py-2 rounded-2xl hover:bg-white/5 hover:text-[#E8D9B0] transition-all text-sm font-medium shadow-sm">
+                        {isMusicPlaying ? <Volume2 size={16} strokeWidth={1.5} /> : <VolumeX size={16} strokeWidth={1.5} />}
+                        Música
+                     </button>
+                     <button className={`flex items-center justify-center gap-2 text-[#D4AF37] bg-[#121B2A]/80 border ${activeChat === 'global' ? 'border-[#D4AF37] shadow-[0_0_10px_rgba(212,175,55,0.3)]' : 'border-[#D4AF37]/30'} px-3 py-2 rounded-2xl hover:bg-white/5 hover:text-[#E8D9B0] transition-all text-sm font-medium shadow-sm`} onClick={() => setActiveChat('global')}>
+                        <Globe size={16} strokeWidth={1.5} />
+                        Mundo
+                     </button>
+                     <button className={`flex items-center justify-center gap-2 text-[#D4AF37] bg-[#121B2A]/80 border ${activeChat === 'pluma' ? 'border-[#D4AF37] shadow-[0_0_10px_rgba(212,175,55,0.3)]' : 'border-[#D4AF37]/30'} px-3 py-2 rounded-2xl hover:bg-white/5 hover:text-[#E8D9B0] transition-all text-sm font-medium shadow-sm`} onClick={() => setActiveChat('pluma')}>
+                        <Bot size={16} strokeWidth={1.5} />
+                        Pluma
+                     </button>
+                     <button className={`flex items-center justify-center gap-2 text-[#D4AF37] bg-[#121B2A]/80 border ${isFriendsSidebarOpen ? 'border-[#D4AF37] shadow-[0_0_10px_rgba(212,175,55,0.3)]' : 'border-[#D4AF37]/30'} px-3 py-2 rounded-2xl hover:bg-white/5 hover:text-[#E8D9B0] transition-all text-sm font-medium shadow-sm`} onClick={() => setIsFriendsSidebarOpen(!isFriendsSidebarOpen)}>
+                        <Users size={16} strokeWidth={1.5} />
+                        Amigos
+                        {Object.values(unreadPMs).some(v => v) && (
+                           <div className="w-2 h-2 bg-cyan-500 rounded-full ml-1"></div>
+                        )}
+                     </button>
+                 </div>
               
               <div className="w-full h-px bg-white/5 my-2"></div>
 
@@ -549,44 +544,9 @@ function MainApp() {
           <main className="flex-1 min-w-0 min-h-0 rounded-[2.5rem] relative flex flex-col bg-gradient-to-b from-[#0B1220] to-[#121B2A] overflow-hidden border-[8px] border-[#07090e] shadow-[0_0_50px_rgba(0,0,0,0.5)]"
                 style={{ background: chatBg ? `url(${chatBg}) center/cover no-repeat` : undefined }}>
               
-              {/* Chat Header */}
-              <div className="flex items-center justify-between px-6 pt-5 pb-3 z-10 shrink-0 bg-transparent">
-                  <div className="flex-1 flex items-center gap-2">
-                      <button onClick={() => setIsSidebarOpen(!isSidebarOpen)} className="md:hidden text-[#D4AF37] hover:text-[#E8D9B0] p-2 rounded-full hover:bg-white/5 transition-colors">
-                          <Menu size={22} strokeWidth={1.5} />
-                      </button>
-                      <button id="music-toggle" onClick={() => setIsMusicPlaying(!isMusicPlaying)} className="text-[#D4AF37] hover:text-[#E8D9B0] transition-colors p-2 rounded-full hover:bg-white/5 hidden sm:flex">
-                          {isMusicPlaying ? <Volume2 size={22} strokeWidth={1.5} /> : <VolumeX size={22} strokeWidth={1.5} />}
-                      </button>
-                      {activeChat === 'global' && (
-                          <button className="hidden md:flex items-center gap-2 text-[#D4AF37] bg-[#121B2A]/80 border border-[#D4AF37]/30 px-3 py-1.5 rounded-full hover:bg-white/5 hover:text-[#E8D9B0] transition-all text-sm font-medium shadow-sm">
-                             <MessageSquare size={16} strokeWidth={1.5} />
-                             Private chat
-                             <Search size={16} className="ml-1 opacity-50" strokeWidth={1.5} />
-                          </button>
-                      )}
-                  </div>
-                  
-                  <div className="flex items-center justify-center flex-1">
-                      <div className="bg-[#151C2C]/80 backdrop-blur-md border border-[#D4AF37]/40 rounded-full px-8 py-1.5 shadow-[0_0_20px_rgba(212,175,55,0.15)] flex items-center justify-center min-w-[140px]">
-                          <h2 className="text-[18px] font-bold text-[#E8D9B0] tracking-wide">
-                              Chat-Liz
-                          </h2>
-                      </div>
-                  </div>
-
-                  <div className="flex items-center justify-end gap-3 flex-1">
-                      <div className="flex items-center gap-2">
-                          <div className="w-8 h-8 rounded-full border border-[#D4AF37]/50 overflow-hidden shadow-sm">
-                              <img src={user.profilePic || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.username}`} alt="avatar" className="w-full h-full object-cover" />
-                          </div>
-                          <span className="text-[#E8D9B0] font-medium text-[15px] hidden md:block">{user.username}</span>
-                      </div>
-                      <button onClick={() => setIsConfigOpen(true)} className="text-[#D4AF37] hover:text-[#E8D9B0] transition-colors p-1 hover:bg-white/5 rounded-full">
-                          <Settings size={22} strokeWidth={1.5} />
-                      </button>
-                  </div>
-              </div>
+              {/* Chat Content Wrapper */}
+              <div className="flex-1 min-h-0 min-w-0 flex flex-col relative z-0">
+                  <div className="hidden"></div>
 
               {activeChat === 'pluma' ? (
                  <div className="flex-1 flex flex-col items-center justify-start p-6 overflow-y-auto bg-black/60 relative">
@@ -685,9 +645,7 @@ function MainApp() {
                 <>
                   {/* Chat Feed */}
               <div className="flex-1 overflow-y-auto px-4 md:px-6 py-4 space-y-2 scrollbar-thin">
-                  {messages.filter((m, i, arr) => 
-                     m && m.sender && !(i > 0 && m.sender === 'Elizabeth' && arr[i-1] && m.text === arr[i-1].text)
-                  ).map((m, idx) => {
+                  {messages.filter(m => m && m.sender).map((m, idx) => {
                      const isLiz = m.sender === 'Elizabeth' || m.isAi;
                      const date = m.createdAt?.toDate ? m.createdAt.toDate() : new Date();
                      const timeStr = isNaN(date.getTime()) ? `10:0${idx % 10}` : date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -802,6 +760,7 @@ function MainApp() {
               </div>
               </>
               )}
+              </div>
           </main>
       </div>
 
