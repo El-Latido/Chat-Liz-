@@ -477,8 +477,15 @@ function MainApp() {
                  <span className="text-xs text-amber-200">LM</span>
              </div>
              <div className="flex items-center gap-2">
-                 <div className="w-7 h-7 rounded-full border border-[#D4AF37]/50 overflow-hidden shrink-0">
-                    <img src={user.profilePic || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.username}`} alt="avatar" className="w-full h-full object-cover" />
+                 <div className="w-8 h-8 rounded-full overflow-visible shrink-0 relative flex justify-center items-center">
+                    {user.activeDecoration && (
+                        <div className="absolute -inset-1.5 pointer-events-none z-10 flex items-center justify-center">
+                            <img src={DECORATIONS.find(d => d.id === user.activeDecoration)?.url} className="w-full h-full object-contain filter drop-shadow-sm" style={{ imageRendering: 'pixelated' }} alt="" />
+                        </div>
+                    )}
+                    <div className="w-full h-full rounded-full border border-[#D4AF37]/50 overflow-hidden relative z-0">
+                        <img src={user.profilePic || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.username}`} alt="avatar" className="w-full h-full object-cover" />
+                    </div>
                  </div>
                  <span className="font-medium text-[#E8D9B0] text-[14px] tracking-wide hidden sm:block">{user.username}</span>
              </div>
@@ -575,7 +582,7 @@ function MainApp() {
                            <div className="flex items-center gap-3 flex-1 overflow-hidden">
                                <div 
                                  title="Ver perfil"
-                                 className="w-10 h-10 rounded-full bg-gradient-to-br from-gray-700 to-gray-800 border border-white/10 flex items-center justify-center overflow-hidden cursor-pointer flex-shrink-0"
+                                 className="w-10 h-10 rounded-full flex items-center justify-center overflow-visible cursor-pointer flex-shrink-0 relative"
                                  onClick={() => {
                                     if (u.username === 'Elizabeth' && user.username.trim() === "Axiss") {
                                         setAiProfileForm({ profilePic: u.profilePic || '', statusMessage: u.statusMessage || 'Administradora', systemInstruction: u.systemInstruction || '' });
@@ -585,7 +592,14 @@ function MainApp() {
                                     }
                                  }}
                                >
-                                   <img src={u.profilePic || `https://api.dicebear.com/7.x/avataaars/svg?seed=${u.username}`} alt="avatar" className="w-full h-full object-cover" />
+                                   {u.activeDecoration && (
+                                       <div className="absolute -inset-2 pointer-events-none z-10 flex items-center justify-center">
+                                           <img src={DECORATIONS.find(d => d.id === u.activeDecoration)?.url} className="w-full h-full object-contain filter drop-shadow-sm" style={{ imageRendering: 'pixelated' }} alt="" />
+                                       </div>
+                                   )}
+                                   <div className="w-full h-full rounded-full border border-white/10 overflow-hidden relative z-0">
+                                       <img src={u.profilePic || `https://api.dicebear.com/7.x/avataaars/svg?seed=${u.username}`} alt="avatar" className="w-full h-full object-cover" />
+                                   </div>
                                </div>
                                <button className="text-left flex-1 truncate flex items-center gap-1" onClick={() => setActiveChat(u.username)}>
                                  <span className="font-medium text-gray-300 text-[15px] truncate block">{u.username}</span>
@@ -983,7 +997,7 @@ function MainApp() {
                 <X size={20} />
              </button>
              <div 
-                className={`w-24 h-24 mx-auto mb-4 rounded-full border border-white/10 overflow-hidden shadow-lg relative ${selectedUserModal.username === 'Elizabeth' && user.username.trim() === 'Axiss' ? 'cursor-pointer group' : ''}`}
+                className={`w-24 h-24 mx-auto mb-4 rounded-full border border-white/10 overflow-visible relative ${selectedUserModal.username === 'Elizabeth' && user.username.trim() === 'Axiss' ? 'cursor-pointer group' : ''}`}
                 onClick={() => {
                     if (selectedUserModal.username === 'Elizabeth' && user.username.trim() === 'Axiss') {
                         setAiProfileForm({ profilePic: selectedUserModal.profilePic || '', statusMessage: selectedUserModal.statusMessage || 'Administradora', systemInstruction: selectedUserModal.systemInstruction || '' });
@@ -992,12 +1006,19 @@ function MainApp() {
                     }
                 }}
              >
-                <img src={selectedUserModal.profilePic || `https://api.dicebear.com/7.x/avataaars/svg?seed=${selectedUserModal.username}`} className="w-full h-full object-cover" alt="Avatar" />
-                {selectedUserModal.username === 'Elizabeth' && user.username.trim() === 'Axiss' && (
-                    <div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                        <span className="text-[10px] font-bold text-white uppercase text-center px-1">Cambiar Foto</span>
+                {selectedUserModal.activeDecoration && (
+                    <div className="absolute -inset-4 pointer-events-none z-10 flex items-center justify-center">
+                        <img src={DECORATIONS.find(d => d.id === selectedUserModal.activeDecoration)?.url} className="w-full h-full object-contain filter drop-shadow-lg" style={{ imageRendering: 'pixelated' }} alt="" />
                     </div>
                 )}
+                <div className="w-full h-full rounded-full overflow-hidden relative z-0">
+                    <img src={selectedUserModal.profilePic || `https://api.dicebear.com/7.x/avataaars/svg?seed=${selectedUserModal.username}`} className="w-full h-full object-cover" alt="Avatar" />
+                    {selectedUserModal.username === 'Elizabeth' && user.username.trim() === 'Axiss' && (
+                        <div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                            <span className="text-[10px] font-bold text-white uppercase text-center px-1">Cambiar Foto</span>
+                        </div>
+                    )}
+                </div>
              </div>
              <h3 className="text-xl font-bold text-white mb-1 flex items-center justify-center gap-2">
                 {selectedUserModal.username}
@@ -1006,7 +1027,13 @@ function MainApp() {
                 ))}
                 {selectedUserModal.role === 'admin' && <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-fuchsia-500/20 text-fuchsia-400 border border-fuchsia-500/30">Admin</span>}
              </h3>
-             <p className="text-cyan-400 text-sm mb-4">Online</p>
+             <div className="flex justify-center items-center gap-3 mb-4">
+                 <p className="text-cyan-400 text-sm">Online</p>
+                 <div className="flex items-center gap-1 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded-full">
+                     <span className="text-amber-500 font-bold text-xs">{selectedUserModal.lizCoins || 0}</span>
+                     <span className="text-[10px] text-amber-500/70">Liz-Moneditas</span>
+                 </div>
+             </div>
              
              <div className="bg-[#0a0a16] border border-white/5 p-4 rounded-2xl relative mb-4">
                 <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-[#12141c] px-2 text-xs text-gray-500 font-semibold uppercase">Estado</div>
